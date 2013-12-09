@@ -44,18 +44,37 @@ string_t string_create()
 
 void string_free( string_t* someStringT )
 {
-    free( someStringT->value );
+    if( ! someStringT )
+    {
+        return;
+    }
+
+    if( someStringT->value != NULL )
+    {
+        free( someStringT->value );
+    }
+
     someStringT->value = NULL;
     someStringT->length = 0;
 }
 
 size_t string_length( string_t* someStringT )
 {
+    if( ! someStringT )
+    {
+        return 0;
+    }
+
     return someStringT->length;
 }
 
 char* string_value( string_t* someStringT )
 {
+    if( ! someStringT )
+    {
+        return NULL;
+    }
+
     return someStringT->value;
 }
 
