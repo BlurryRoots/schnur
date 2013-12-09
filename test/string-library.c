@@ -101,6 +101,21 @@ TEST_CASE( "string-library", "[string-library]" )
         string_free( &aString );
     }
 
+    SECTION( "Copying string." )
+    {
+        const char* str = "hanswurst";
+        string_t another = string_create();
+
+        aString = string_create();
+
+        string_append_cstring( &aString, str );
+        string_copy( &another, aString );
+        REQUIRE( strcmp( another.value, str ) == 0 );
+
+        string_free( &aString );
+        string_free( &another );
+    }
+
     /*  TODO:
             write test for remaining functions
     */

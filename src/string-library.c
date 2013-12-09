@@ -182,7 +182,7 @@ int string_copy( string_t* someStringT, string_t someOtherStrintT )
 
     string_free( someStringT );
 
-    someStringT->value = (char*)calloc( someOtherStrintT.length + 1, sizeof(char*) );
+    someStringT->value = (char*)calloc( someOtherStrintT.length + 1, sizeof( char ) );
     if( ! s.value )
     {
         someStringT->length = 0;
