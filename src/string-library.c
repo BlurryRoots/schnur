@@ -42,6 +42,25 @@ string_t string_create()
     return s;
 }
 
+string_t string_create_from( const char* someCString )
+{
+    size_t i, len;
+    string_t s;
+
+    if( ! someCString )
+    {        
+        s.value = NULL;
+        s.length = 0;
+
+        return s;
+    }
+
+    s = string_create();
+    string_append_cstring( &s, someCString );
+
+    return s;
+}
+
 void string_free( string_t* someStringT )
 {
     if( ! someStringT )
@@ -201,11 +220,13 @@ int string_copy( string_t* someStringT, string_t someOtherStrintT )
     return 1;
 }
 
-int string_compare( string_t someStringT, string_t someOtherStrintT )
+int string_equals( string_t someStringT, string_t someOtherStrintT )
 {
     size_t i;
 
-    if( someStringT.length != someOtherStrintT.length )
+    if( ! someStringT.value 
+     || ! someOtherStrintT.value 
+     || someStringT.length != someOtherStrintT.length )
     {
         return 0;
     }
@@ -219,4 +240,31 @@ int string_compare( string_t someStringT, string_t someOtherStrintT )
     }
 
     return 1;
+}
+
+int string_equals_cstring( string_t someStringT, const char* someCString )
+{
+    size_t i, len;
+
+    if( ! someStringT.value || ! someCString )
+    {
+        return 0;
+    }
+
+    len = cstring_length( someCString );
+
+    if( someStringT.length != len )
+    {
+        return 0;
+    }
+
+    for( i = 0; i < someStringT.length; ++i )
+    {
+        if( someStringT.value[i] != someCString[i] )
+        {
+            return 0;
+        }
+    }
+
+    return 1;    
 }

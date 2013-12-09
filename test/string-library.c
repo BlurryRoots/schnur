@@ -29,7 +29,7 @@ TEST_CASE( "string-library", "[string-library]" )
     // 
     string_t aString;
 
-    SECTION( "Test length function for naked c-strings." )
+    SECTION( "Get length of naked c-strings. - cstring_length -" )
     {
         const char* str = "123 test test";
         const size_t len = 13;
@@ -37,7 +37,7 @@ TEST_CASE( "string-library", "[string-library]" )
         REQUIRE( cstring_length( str ) == len );
     }
 
-    SECTION( "Test the creation of a string." )
+    SECTION( "Creation of a string. - string_create and string_free -" )
     {
         aString = string_create();
 
@@ -52,7 +52,23 @@ TEST_CASE( "string-library", "[string-library]" )
         REQUIRE( aString.length == 0 );
     }
 
-    SECTION( "Append character to string." )
+    SECTION( "Creation of a string. - string_create_from and string_free -" )
+    {
+        const char* str = "rincewind";
+        aString = string_create_from( str );
+
+        REQUIRE( aString.value != NULL );
+        REQUIRE( strcmp( aString.value, str ) == 0 );
+
+        REQUIRE( aString.length == cstring_length( str ) );
+
+        string_free( &aString );
+
+        REQUIRE( aString.value == NULL );
+        REQUIRE( aString.length == 0 );
+    }
+
+    SECTION( "Append character to string. - string_append -" )
     {
         const char first = '?';
         const char second = '!';
@@ -75,7 +91,7 @@ TEST_CASE( "string-library", "[string-library]" )
         string_free( &aString );
     }
 
-    SECTION( "Append c-string to string." )
+    SECTION( "Append c-string to string. - string_append_cstring -" )
     {
         const char* str = "answer = ";
         const size_t len = 9;
@@ -101,7 +117,7 @@ TEST_CASE( "string-library", "[string-library]" )
         string_free( &aString );
     }
 
-    SECTION( "Copying string." )
+    SECTION( "Copying string. - string_copy -" )
     {
         const char* str = "hanswurst";
         string_t another = string_create();
@@ -111,6 +127,31 @@ TEST_CASE( "string-library", "[string-library]" )
         string_append_cstring( &aString, str );
         string_copy( &another, aString );
         REQUIRE( strcmp( another.value, str ) == 0 );
+
+        string_free( &aString );
+        string_free( &another );
+    }
+
+    SECTION( "Comparing string and string. - string_equals -" )
+    {
+        const char* str = "hanswurst";
+        const char* str2 = "hanswurst";
+        string_t another = string_create_from( str );
+
+        aString = string_create_from( str2 );
+
+        REQUIRE( string_equals( aString, another ) == 1 );
+
+        string_free( &aString );
+        string_free( &another );
+    }
+
+    SECTION( "Comparing string and string. - string_equals_cstring -" )
+    {
+        const char* str = "hanswurst";
+        string_t another = string_create_from( str );
+
+        REQUIRE( string_equals_cstring( another, str ) == 1 );
 
         string_free( &aString );
         string_free( &another );

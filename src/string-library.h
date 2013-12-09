@@ -28,9 +28,11 @@ typedef
     struct string_t
     string_t;
 
-size_t cstring_length( const char* someString );
+size_t cstring_length( const char* someCString );
 
 string_t string_create();
+
+string_t string_create_from( const char* someCString );
 
 void string_free( string_t* someStringT );
 
@@ -46,11 +48,8 @@ int string_append_string( string_t* someStringT, string_t other );
 
 int string_copy( string_t* someStringT, string_t other );
 
-int string_compare( string_t someStringT, string_t other );
+int string_equals( string_t someStringT, string_t other );
 
-/*  TODO:
-        add functions for comparing string_t and c-string
-        add functions for copying c-string into string_t
-*/
+int string_equals_cstring( string_t someStringT, const char* other );
 
 #endif

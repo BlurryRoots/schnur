@@ -73,12 +73,12 @@ clean: clean-build clean-objects
 prepare: prepare-build prepare-objects
 
 build-static-library:
-	$(C_COMPILE_COMMAND) -c $(SOURCE)/$(PROJECT_NAME).c -o $(OBJECTS)/$(PROJECT_NAME).o
+	$(C_COMPILE_COMMAND) -c $(SOURCE)/$(PROJECT_NAME).c -o $(OBJECTS)/$(PROJECT_NAME).o $(ERROR_OUTPUT)
 	ar rvs $(BUILD)/lib$(PROJECT_NAME).a $(OBJECTS)/$(PROJECT_NAME).o
 
 build-test: clean-test prepare-test
-	$(CPP_COMPILE_COMMAND) $(INCLUDES) -c $(TEST)/$(PROJECT_NAME).c -o $(OBJECTS)/test/$(PROJECT_NAME).o
-	$(CPP_COMPILER) $(LIB_PATH) $(OBJECTS)/test/$(PROJECT_NAME).o $(LIBS) -o $(BUILD)/test/$(PROJECT_NAME)
+	$(CPP_COMPILE_COMMAND) $(INCLUDES) -c $(TEST)/$(PROJECT_NAME).c -o $(OBJECTS)/test/$(PROJECT_NAME).o $(ERROR_OUTPUT)
+	$(CPP_COMPILER) $(LIB_PATH) $(OBJECTS)/test/$(PROJECT_NAME).o $(LIBS) -o $(BUILD)/test/$(PROJECT_NAME) $(ERROR_OUTPUT)
 
 run-test:
 	bin/test/./$(PROJECT_NAME)
