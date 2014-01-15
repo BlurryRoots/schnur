@@ -149,11 +149,33 @@ string_compact( string_t* self )
     return 1;
 }
 
+int
+string_copy( string_t* self, const string_t* other )
+{    
+    if( self == NULL || other == NULL )
+    {
+        return 0;
+    }
+    
+    while( self->capacity <= other->length )
+    {
+        if( ! string_expand( self ) )
+        {
+            return 0;
+        }
+    }
+
+    wcsncpy( self->data, other->data, other->length );
+    self->length = other->length;
+    self->data[self->length] = L'\0';
+
+    return 1;
+}
 
 int
 string_copy_cstr( string_t* self, const wchar_t* other )
 {
-    size_t i, ol;
+    size_t ol;
 
     if( self == NULL || other == NULL )
     {
@@ -203,18 +225,29 @@ string_equal_cstr( const string_t* self, const wchar_t* other )
 {
     size_t so;
 
-    if( self == NULL )
+    if( self == NULL
+     || other == NULL )
     {
         return 0;
     }
 
     so = wcslen( other );
 
-    if( self->length == so
-     && wcsncmp( self->data, other, so ) == 0 )
+    return self->length == so
+        && wcsncmp( self->data, other, so ) == 0;
+}
+
+int
+string_equal( const string_t* self, const string_t* other )
+{
+    size_t i;
+
+    if( self == NULL 
+     || other == NULL )
     {
-        return 1;
+        return 0;
     }
 
-    return 0;
+    return self->length == other->length
+        && wcsncmp( self->data, other->data, self->length ) == 0;
 }

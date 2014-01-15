@@ -49,6 +49,9 @@ int
 string_compact( string_t* self );
 
 int
+string_copy( string_t* self, const string_t* other );
+
+int
 string_copy_cstr( string_t* self, const wchar_t* other );
 
 int
@@ -56,5 +59,8 @@ string_append( string_t* self, wchar_t c );
 
 int
 string_equal_cstr( const string_t* self, const wchar_t* other );
+
+int
+string_equal( const string_t* self, const string_t* other );
 
 #endif

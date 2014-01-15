@@ -103,6 +103,30 @@ TEST_CASE( "string manipulation", "[string]" )
         string_free( s );
     }
 
+    SECTION( "string_copy" )
+    {
+        const wchar_t* w = L"Hänsel mag Soße!";
+        const size_t l = 16;
+        string_t* o;
+
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        REQUIRE( wcslen( w ) == l );
+        string_copy_cstr( s, w );
+
+        REQUIRE( wcsncmp( s->data, w, l ) == 0 );
+
+        o = string_new();
+        REQUIRE( s != NULL );
+
+        string_copy( o, s );
+        REQUIRE( wcsncmp( s->data, o->data, l ) == 0 );
+
+        string_free( o );
+        string_free( s );
+    }
+
     SECTION( "string_append" )
     {
         const wchar_t* b = L"?";
@@ -153,5 +177,25 @@ TEST_CASE( "string manipulation", "[string]" )
 
         string_free( s );
     }
-}
 
+    SECTION( "string_equal" )
+    {
+        const wchar_t* w = L"Hänsel mag Soße!";
+        string_t* o;
+
+        s = string_new();
+        REQUIRE( s != NULL );
+        string_copy_cstr( s, w );
+
+        o = string_new();
+        REQUIRE( o != NULL );
+        string_copy_cstr( o, w );
+
+        REQUIRE( s != o );
+
+        REQUIRE( string_equal( s, o ) == 1 );
+
+        string_free( o );
+        string_free( s );
+    }
+}
