@@ -19,145 +19,139 @@ limitations under the License.
 
 extern "C"
 {
-#include <string-library.h>
+    #include "../src/string-library.h"
+
+    #include <wchar.h>
+    #include <stdlib.h>
+    #include <stdio.h>
 }
 
-#include <cstring>
+#include <iostream>
 
-TEST_CASE( "string-library", "[string-library]" )
+TEST_CASE( "string util", "[string]" )
 {
-    // 
-    string_t aString;
-
-    SECTION( "Get length of naked c-strings. - cstring_length -" )
-    {
-        const char* str = "123 test test";
-        const size_t len = 13;
-
-        REQUIRE( cstring_length( str ) == len );
-    }
-
-    SECTION( "Creation of a string. - string_create and string_free -" )
-    {
-        aString = string_create();
-
-        REQUIRE( aString.value != NULL );
-        REQUIRE( aString.value[0] == '\0' );
-
-        REQUIRE( aString.length == 0 );
-
-        string_free( &aString );
-
-        REQUIRE( aString.value == NULL );
-        REQUIRE( aString.length == 0 );
-    }
-
-    SECTION( "Creation of a string. - string_create_from and string_free -" )
-    {
-        const char* str = "rincewind";
-        aString = string_create_from( str );
-
-        REQUIRE( aString.value != NULL );
-        REQUIRE( strcmp( aString.value, str ) == 0 );
-
-        REQUIRE( aString.length == cstring_length( str ) );
-
-        string_free( &aString );
-
-        REQUIRE( aString.value == NULL );
-        REQUIRE( aString.length == 0 );
-    }
-
-    SECTION( "Append character to string. - string_append -" )
-    {
-        const char first = '?';
-        const char second = '!';
-        const char* combined = "?!";
-
-        aString = string_create();
-
-        string_append( &aString, first );
-
-        REQUIRE( aString.value != NULL );
-        REQUIRE( aString.value[0] == first );
-        REQUIRE( aString.value[1] == '\0' );
-        REQUIRE( aString.length == 1 );
-
-        string_append( &aString, second );
-
-        REQUIRE( aString.length == 2 );
-        REQUIRE( strcmp( aString.value, combined ) == 0 );
-
-        string_free( &aString );
-    }
-
-    SECTION( "Append c-string to string. - string_append_cstring -" )
-    {
-        const char* str = "answer = ";
-        const size_t len = 9;
-        const char* str2 = "42";
-        const size_t len2 = 2;
-        const char* result = "answer = 42";
-        const size_t lenResult = len + len2;
-
-        aString = string_create();
-
-        string_append_cstring( &aString, str );
-
-        REQUIRE( aString.value != NULL );
-        REQUIRE( aString.length == len );
-        REQUIRE( strcmp( aString.value, str ) == 0 );
-
-        string_append_cstring( &aString, str2 );
-
-        REQUIRE( aString.value != NULL );
-        REQUIRE( aString.length == lenResult );
-        REQUIRE( strcmp( aString.value, result ) == 0 );
-
-        string_free( &aString );
-    }
-
-    SECTION( "Copying string. - string_copy -" )
-    {
-        const char* str = "hanswurst";
-        string_t another = string_create();
-
-        aString = string_create();
-
-        string_append_cstring( &aString, str );
-        string_copy( &another, aString );
-        REQUIRE( strcmp( another.value, str ) == 0 );
-
-        string_free( &aString );
-        string_free( &another );
-    }
-
-    SECTION( "Comparing string and string. - string_equals -" )
-    {
-        const char* str = "hanswurst";
-        const char* str2 = "hanswurst";
-        string_t another = string_create_from( str );
-
-        aString = string_create_from( str2 );
-
-        REQUIRE( string_equals( aString, another ) == 1 );
-
-        string_free( &aString );
-        string_free( &another );
-    }
-
-    SECTION( "Comparing string and string. - string_equals_cstring -" )
-    {
-        const char* str = "hanswurst";
-        string_t another = string_create_from( str );
-
-        REQUIRE( string_equals_cstring( another, str ) == 1 );
-
-        string_free( &aString );
-        string_free( &another );
-    }
-
-    /*  TODO:
-            write test for remaining functions
-    */
 }
+
+TEST_CASE( "string manipulation", "[string]" )
+{
+    string_t* s = NULL;
+
+    SECTION( "string_new" )
+    {
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        REQUIRE( s->data != NULL );
+        REQUIRE( s->capacity == STRING_BLOCK_SIZE );
+        REQUIRE( s->length == 0 );
+
+        string_free( s );
+    }
+
+    SECTION( "string_expand" )
+    {
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        string_expand( s );
+
+        REQUIRE( s->data != NULL );
+        REQUIRE( s->capacity == 2 * STRING_BLOCK_SIZE );
+
+        string_free( s );
+    }
+
+    SECTION( "string_compact" )
+    {
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        string_expand( s );
+        string_expand( s ); // 3 * STRING_BLOCK_SIZE
+
+        REQUIRE( s->data != NULL );
+        REQUIRE( s->capacity == 3 * STRING_BLOCK_SIZE );
+
+        string_fill( s, L'=' );
+
+        s->length = 
+            (2 * STRING_BLOCK_SIZE - 1)
+            - (STRING_BLOCK_SIZE / 2);
+        // produces a memory offset of half the block size
+        // and freeable memory of 1 * STRING_BLOCK_SIZE
+        s->data[s->length] = '\0';
+
+        REQUIRE( string_compact( s ) == 1 );
+        REQUIRE( s->capacity == 2 * STRING_BLOCK_SIZE );
+
+        string_free( s );
+    }
+
+    SECTION( "string_copy_cstr" )
+    {
+        const wchar_t* w = L"Hänsel mag Soße!";
+        const size_t l = 16;
+
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        REQUIRE( wcslen( w ) == l );
+        string_copy_cstr( s, w );
+
+        REQUIRE( wcsncmp( s->data, w, l ) == 0 );
+
+        string_free( s );
+    }
+
+    SECTION( "string_append" )
+    {
+        const wchar_t* b = L"?";
+
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        REQUIRE( string_append( s, b[0] ) == 1 );
+
+        REQUIRE( wcsncmp( s->data, b, 1 ) == 0 );
+
+        string_free( s );
+    }
+
+    SECTION( "string_append mass" )
+    {
+        const int Count = 23000;
+        const wchar_t* t = L"0123456789";
+
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        for( int i = 0; i < Count; ++i )
+        {
+            REQUIRE( string_append( s, t[i % 10] ) == 1 );
+        }
+
+        for( int i = 0; i < Count; ++i )
+        {
+            REQUIRE( s->data[i] == t[i % 10] );
+        }
+
+        printf( "c: %i\n", s->capacity );
+
+        string_free( s );
+    }
+
+    SECTION( "string_equal_cstr" )
+    {
+        const wchar_t* w = L"Hänsel mag Soße!";
+
+        s = string_new();
+        REQUIRE( s != NULL );
+
+        string_copy_cstr( s, w );
+
+        REQUIRE( string_equal_cstr( s, w ) == 1 );
+
+        string_free( s );
+    }
+}
+

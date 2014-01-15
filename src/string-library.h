@@ -14,42 +14,47 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-#include <stdlib.h>
 
-#ifndef _STRING_T_
-#define _STRING_T_
+#include <wchar.h>
+
+#ifndef _STRING_LIBRARY_
+#define _STRING_LIBRARY_
+
+#define STRING_BLOCK_SIZE 32
 
 struct string_t
 {
-    char* value;
+    wchar_t* data;
+
     size_t length;
+    size_t capacity;
 };
 typedef
     struct string_t
     string_t;
 
-size_t cstring_length( const char* someCString );
+string_t*
+string_new();
 
-string_t string_create();
+void
+string_free( string_t* self );
 
-string_t string_create_from( const char* someCString );
+void
+string_fill( string_t* self, wchar_t c );
 
-void string_free( string_t* someStringT );
+int
+string_expand( string_t* self );
 
-size_t string_length( string_t* someStringT );
+int
+string_compact( string_t* self );
 
-char* string_value( string_t* someStringT );
+int
+string_copy_cstr( string_t* self, const wchar_t* other );
 
-int string_append( string_t* someStringT, char c );
+int
+string_append( string_t* self, wchar_t c );
 
-int string_append_cstring( string_t* someStringT, const char* other );
-
-int string_append_string( string_t* someStringT, string_t other );
-
-int string_copy( string_t* someStringT, string_t other );
-
-int string_equals( string_t someStringT, string_t other );
-
-int string_equals_cstring( string_t someStringT, const char* other );
+int
+string_equal_cstr( const string_t* self, const wchar_t* other );
 
 #endif

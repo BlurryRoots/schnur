@@ -14,257 +14,207 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
+
 #include "string-library.h"
 
-size_t cstring_length( const char* someString )
+#include <stdlib.h>
+
+string_t*
+string_new()
 {
+    string_t* s;
     size_t i;
 
-    if( ! someString )
+    s = malloc( sizeof( string_t ) );
+    if( ! s )
     {
         return 0;
     }
 
-    for( i = 0; someString[i] != '\0'; ++i )
-    {}
-
-    return i;
-}
-
-string_t string_create()
-{
-    string_t s;
-
-    s.value = (char*)calloc( 1, sizeof(char) );
-    s.value[0] = '\0';
-    s.length = 0;
-
-    return s;
-}
-
-string_t string_create_from( const char* someCString )
-{
-    size_t i, len;
-    string_t s;
-
-    if( ! someCString )
-    {        
-        s.value = NULL;
-        s.length = 0;
-
-        return s;
+    s->data = calloc( STRING_BLOCK_SIZE, sizeof( wchar_t ) );
+    if( ! s->data )
+    {
+        free( s );
+        return 0;
     }
 
-    s = string_create();
-    string_append_cstring( &s, someCString );
+    s->capacity = STRING_BLOCK_SIZE;
+    s->length = 0;
 
     return s;
 }
 
-void string_free( string_t* someStringT )
+void
+string_free( string_t* self )
 {
-    if( ! someStringT )
+    size_t i;
+
+    if( self == NULL )
     {
         return;
     }
 
-    if( someStringT->value != NULL )
+    if( self->data != NULL )
     {
-        free( someStringT->value );
+        string_fill( self, L'#' );
+        free( self->data );
     }
 
-    someStringT->value = NULL;
-    someStringT->length = 0;
+    free( self );
 }
 
-size_t string_length( string_t* someStringT )
-{
-    if( ! someStringT )
-    {
-        return 0;
-    }
-
-    return someStringT->length;
-}
-
-char* string_value( string_t* someStringT )
-{
-    if( ! someStringT )
-    {
-        return NULL;
-    }
-
-    return someStringT->value;
-}
-
-int string_append( string_t* someStringT, char c )
+void
+string_fill( string_t* self, wchar_t c )
 {
     size_t i;
-    char copy[someStringT->length];
 
-    if( ! someStringT )
+    if( self == NULL )
+    {
+        return;
+    }
+
+    for( i = 0; i < self->capacity; ++i )
+    {
+        self->data[i] = c;
+    }
+    self->data[self->capacity - 1] = '\0';    
+}
+
+int
+string_expand( string_t* self )
+{
+    size_t i;
+    wchar_t* buffer;
+
+    if( self == NULL )
     {
         return 0;
     }
 
-    for( i = 0; i < someStringT->length; ++i )
-    {
-        copy[i] = someStringT->value[i];
-    }
-
-    free( someStringT->value );
-
-    someStringT->value = (char*)calloc( someStringT->length + 2, sizeof(char) );
-    if( ! someStringT->value )
+    buffer = calloc(
+        self->capacity + STRING_BLOCK_SIZE,
+        sizeof( wchar_t )
+    );
+    if( ! buffer )
     {
         return 0;
     }
 
-    for( i = 0; i < someStringT->length; ++i )
-    {
-        someStringT->value[i] = copy[i];
-    }
-    someStringT->value[someStringT->length] = c;
-    someStringT->value[someStringT->length + 1] = '\0';
-    someStringT->length++;
+    wcsncpy( buffer, self->data, self->length );
+    buffer[self->length] = L'\0';
+
+    string_fill( self, L'#' );
+    free( self->data );
+
+    self->data = buffer;
+    self->capacity += STRING_BLOCK_SIZE;
 
     return 1;
 }
 
-int string_append_cstring( string_t* someStringT, const char* someOtherString )
+int
+string_compact( string_t* self )
 {
-    size_t i, otherLength;
-    char copy[someStringT->length];
+    size_t diff, memoff;
+    wchar_t* buffer;
 
-    if( ! someStringT || ! someOtherString )
+    if( self == NULL )
     {
         return 0;
     }
 
-    for( i = 0; i < someStringT->length; ++i )
-    {
-        copy[i] = someStringT->value[i];
-    }
+    diff = self->capacity - (self->length + 1); // \0
 
-    free( someStringT->value );
-
-    otherLength = cstring_length( someOtherString );
-
-    someStringT->value = (char*)calloc( someStringT->length + otherLength + 1, sizeof(char) );
-    if( ! someStringT->value )
+    memoff = diff % STRING_BLOCK_SIZE;
+    if( memoff > 0 )
     {
-        return 0;
-    }
+        buffer = calloc(
+            self->length + 1 + memoff, // len + \0 + offset
+            sizeof( wchar_t )
+        );
+        if( buffer == NULL )
+        {
+            return 0;
+        }
 
-    for( i = 0; i < someStringT->length; ++i )
-    {
-        someStringT->value[i] = copy[i];
+        wcsncpy( buffer, self->data, self->length + 1 + memoff );
+
+        string_fill( self, L'#' );
+        free( self->data );
+        self->data = buffer;
+
+        self->capacity = self->length + 1 + memoff;
     }
-    for( i = 0; i < otherLength; ++i )
-    {
-        someStringT->value[i + someStringT->length] = someOtherString[i];
-    }
-    someStringT->value[someStringT->length + otherLength] = '\0';
-    someStringT->length += otherLength;
 
     return 1;
 }
 
-int string_append_string( string_t* someStringT, string_t someOtherStrintT )
+
+int
+string_copy_cstr( string_t* self, const wchar_t* other )
 {
-    if( ! someStringT )
+    size_t i, ol;
+
+    if( self == NULL || other == NULL )
     {
         return 0;
     }
 
-    return string_append_cstring( someStringT, someOtherStrintT.value );
+    ol = wcslen( other );
+    while( self->capacity <= ol )
+    {
+        if( ! string_expand( self ) )
+        {
+            return 0;
+        }
+    }
+
+    wcsncpy( self->data, other, ol );
+    self->length = ol;
+    self->data[self->length] = L'\0';
+
+    return 1;
 }
 
-int string_copy( string_t* someStringT, string_t someOtherStrintT )
+int
+string_append( string_t* self, wchar_t c )
 {
-    size_t i;
-    string_t s;
-
-    if( ! someStringT || ! someOtherStrintT.value )
+    if( self == NULL )
     {
         return 0;
     }
 
-    if( someOtherStrintT.length == 0 )
+    if( (self->length + 1) >= self->capacity )
     {
-        s = string_create();
-        someStringT->value = s.value;
-        someStringT->length = s.length;
+        if( ! string_expand( self ) )
+        {
+            return 0;
+        }
+    }
 
+    self->data[self->length++] = c;
+    self->data[self->length] = '\0';
+
+    return 1;
+}
+
+int
+string_equal_cstr( const string_t* self, const wchar_t* other )
+{
+    size_t so;
+
+    if( self == NULL )
+    {
+        return 0;
+    }
+
+    so = wcslen( other );
+
+    if( self->length == so
+     && wcsncmp( self->data, other, so ) == 0 )
+    {
         return 1;
     }
 
-    string_free( someStringT );
-
-    someStringT->value = (char*)calloc( someOtherStrintT.length + 1, sizeof( char ) );
-    if( ! s.value )
-    {
-        someStringT->length = 0;
-        someStringT->value = NULL;
-        
-        return 0;
-    }
-
-    someStringT->length = someOtherStrintT.length;
-    for( i = 0; i < someStringT->length; ++i )
-    {
-        someStringT->value[i] = someOtherStrintT.value[i];
-    }
-    someStringT->value[someStringT->length] = '\0';
-
-    return 1;
-}
-
-int string_equals( string_t someStringT, string_t someOtherStrintT )
-{
-    size_t i;
-
-    if( ! someStringT.value 
-     || ! someOtherStrintT.value 
-     || someStringT.length != someOtherStrintT.length )
-    {
-        return 0;
-    }
-
-    for( i = 0; i < someStringT.length; ++i )
-    {
-        if( someStringT.value[i] != someOtherStrintT.value[i] )
-        {
-            return 0;
-        }
-    }
-
-    return 1;
-}
-
-int string_equals_cstring( string_t someStringT, const char* someCString )
-{
-    size_t i, len;
-
-    if( ! someStringT.value || ! someCString )
-    {
-        return 0;
-    }
-
-    len = cstring_length( someCString );
-
-    if( someStringT.length != len )
-    {
-        return 0;
-    }
-
-    for( i = 0; i < someStringT.length; ++i )
-    {
-        if( someStringT.value[i] != someCString[i] )
-        {
-            return 0;
-        }
-    }
-
-    return 1;    
+    return 0;
 }
