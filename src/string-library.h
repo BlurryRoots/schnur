@@ -39,8 +39,11 @@ string_new();
 void
 string_free( string_t* self );
 
-void
+int
 string_fill( string_t* self, wchar_t c );
+
+int
+string_fill_n( string_t* self, wchar_t c, size_t n );
 
 int
 string_expand( string_t* self );
