@@ -63,4 +63,7 @@ string_equal_cstr( const string_t* self, const wchar_t* other );
 int
 string_equal( const string_t* self, const string_t* other );
 
+int
+string_reverse( string_t* self );
+
 #endif

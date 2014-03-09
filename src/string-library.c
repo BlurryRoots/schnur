@@ -23,23 +23,24 @@ string_t*
 string_new()
 {
     string_t* s;
-    size_t i;
 
     s = malloc( sizeof( string_t ) );
-    if( ! s )
+    if( NULL == s )
     {
         return 0;
     }
 
     s->data = calloc( STRING_BLOCK_SIZE, sizeof( wchar_t ) );
-    if( ! s->data )
+    if( NULL == s->data )
     {
         free( s );
-        return 0;
+        s = NULL;
     }
-
-    s->capacity = STRING_BLOCK_SIZE;
-    s->length = 0;
+    else
+    {
+        s->capacity = STRING_BLOCK_SIZE;
+        s->length = 0;
+    }
 
     return s;
 }
@@ -47,14 +48,12 @@ string_new()
 void
 string_free( string_t* self )
 {
-    size_t i;
-
-    if( self == NULL )
+    if( NULL == self )
     {
         return;
     }
 
-    if( self->data != NULL )
+    if( NULL != self->data )
     {
         string_fill( self, L'#' );
         free( self->data );
@@ -68,7 +67,7 @@ string_fill( string_t* self, wchar_t c )
 {
     size_t i;
 
-    if( self == NULL )
+    if( NULL == self )
     {
         return;
     }
@@ -83,10 +82,9 @@ string_fill( string_t* self, wchar_t c )
 int
 string_expand( string_t* self )
 {
-    size_t i;
     wchar_t* buffer;
 
-    if( self == NULL )
+    if( NULL == self )
     {
         return 0;
     }
@@ -95,7 +93,7 @@ string_expand( string_t* self )
         self->capacity + STRING_BLOCK_SIZE,
         sizeof( wchar_t )
     );
-    if( ! buffer )
+    if( NULL == buffer )
     {
         return 0;
     }
@@ -118,7 +116,7 @@ string_compact( string_t* self )
     size_t diff, memoff;
     wchar_t* buffer;
 
-    if( self == NULL )
+    if( NULL == self )
     {
         return 0;
     }
@@ -132,7 +130,7 @@ string_compact( string_t* self )
             self->length + 1 + memoff, // len + \0 + offset
             sizeof( wchar_t )
         );
-        if( buffer == NULL )
+        if( NULL == buffer )
         {
             return 0;
         }
@@ -152,7 +150,7 @@ string_compact( string_t* self )
 int
 string_copy( string_t* self, const string_t* other )
 {    
-    if( self == NULL || other == NULL )
+    if( NULL == self || NULL == other )
     {
         return 0;
     }
@@ -177,12 +175,13 @@ string_copy_cstr( string_t* self, const wchar_t* other )
 {
     size_t ol;
 
-    if( self == NULL || other == NULL )
+    if( NULL == self || NULL == other )
     {
         return 0;
     }
 
     ol = wcslen( other );
+
     while( self->capacity <= ol )
     {
         if( ! string_expand( self ) )
@@ -201,7 +200,7 @@ string_copy_cstr( string_t* self, const wchar_t* other )
 int
 string_append( string_t* self, wchar_t c )
 {
-    if( self == NULL )
+    if( NULL == self )
     {
         return 0;
     }
@@ -223,31 +222,61 @@ string_append( string_t* self, wchar_t c )
 int
 string_equal_cstr( const string_t* self, const wchar_t* other )
 {
-    size_t so;
+    size_t ol;
 
-    if( self == NULL
-     || other == NULL )
+    if( NULL == self
+     || NULL == other )
     {
         return 0;
     }
 
-    so = wcslen( other );
+    ol = wcslen( other );
 
-    return self->length == so
-        && wcsncmp( self->data, other, so ) == 0;
+    return self->length == ol
+        && 0 == wcsncmp( self->data, other, ol );
 }
 
 int
 string_equal( const string_t* self, const string_t* other )
 {
-    size_t i;
-
-    if( self == NULL 
-     || other == NULL )
+    if( NULL == self
+     || NULL == other )
     {
         return 0;
     }
 
     return self->length == other->length
-        && wcsncmp( self->data, other->data, self->length ) == 0;
+        && 0 == wcsncmp( self->data, other->data, self->length );
+}
+
+int
+string_reverse( string_t* self )
+{
+    wchar_t buffer;
+    int mid, n, i;
+
+    if( NULL == self )
+    {
+        return 0;
+    }
+
+    if( 0 == self->length )
+    {
+        return 1;
+    }
+
+    i = 0;
+    n = self->length - 1;
+    mid = self->length / 2;
+    while( i < mid )
+    {
+        buffer        = self->data[i];
+        self->data[i] = self->data[n];
+        self->data[n] = buffer;
+
+        --n;
+        ++i;
+    }
+
+    return 1;
 }

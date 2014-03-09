@@ -21,12 +21,15 @@ extern "C"
 {
     #include "../src/string-library.h"
 
-    #include <wchar.h>
     #include <stdlib.h>
     #include <stdio.h>
+    #include <wchar.h>
+    #include <locale.h>
 }
 
 #include <iostream>
+
+#define SHOW_DEBUG 0
 
 TEST_CASE( "string util", "[string]" )
 {
@@ -90,7 +93,7 @@ TEST_CASE( "string manipulation", "[string]" )
     SECTION( "string_copy_cstr" )
     {
         const wchar_t* w = L"Hänsel mag Soße!";
-        const size_t l = 16;
+        const size_t l =  wcslen( w );
 
         s = string_new();
         REQUIRE( s != NULL );
@@ -105,8 +108,8 @@ TEST_CASE( "string manipulation", "[string]" )
 
     SECTION( "string_copy" )
     {
-        const wchar_t* w = L"Hänsel mag Soße!";
-        const size_t l = 16;
+        const wchar_t* w = L"ευχαριστημένος";
+        const size_t l = wcslen( w );
         string_t* o;
 
         s = string_new();
@@ -159,14 +162,14 @@ TEST_CASE( "string manipulation", "[string]" )
             REQUIRE( s->data[i] == t[i % 10] );
         }
 
-        printf( "c: %i\n", s->capacity );
+        // printf( "c: %i\n", s->capacity );
 
         string_free( s );
     }
 
     SECTION( "string_equal_cstr" )
     {
-        const wchar_t* w = L"Hänsel mag Soße!";
+        const wchar_t* w = L"舒适";
 
         s = string_new();
         REQUIRE( s != NULL );
@@ -180,7 +183,7 @@ TEST_CASE( "string manipulation", "[string]" )
 
     SECTION( "string_equal" )
     {
-        const wchar_t* w = L"Hänsel mag Soße!";
+        const wchar_t* w = L"décontracté";
         string_t* o;
 
         s = string_new();
@@ -196,6 +199,35 @@ TEST_CASE( "string manipulation", "[string]" )
         REQUIRE( string_equal( s, o ) == 1 );
 
         string_free( o );
+        string_free( s );
+    }
+
+    SECTION( "string_reverse" )
+    {
+        const wchar_t* w = L"солнце";
+        const size_t l = wcslen( w );
+
+        s = string_new();
+        REQUIRE( NULL != s );
+        string_copy_cstr( s, w );
+
+#if 1 == SHOW_DEBUG
+        setlocale( LC_ALL, "" );
+
+        wprintf( L"d: %ls\n", s->data );
+#endif
+
+        REQUIRE( 1 == string_reverse( s ) );
+
+#if 1 == SHOW_DEBUG
+        wprintf( L"d: %ls\n", s->data );
+#endif
+
+        for( size_t i = 0; i < l; ++i )
+        {
+            REQUIRE( s->data[i] == w[l - i - 1] );
+        }
+
         string_free( s );
     }
 }
