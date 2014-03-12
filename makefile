@@ -21,10 +21,10 @@
 
 PROJECT_NAME = string-library
 
-C_COMPILER = gcc
+C_COMPILER = clang
 C_COMPILER_FLAGS = -Wall -std=c11
 
-CPP_COMPILER = g++
+CPP_COMPILER = clang++
 CPP_COMPILER_FLAGS = -Wall -std=c++11
 
 SOURCE = src
@@ -47,6 +47,8 @@ CPP_COMPILE_COMMAND = $(CPP_COMPILER) $(CPP_COMPILER_FLAGS)
 #
 # cleaning
 #
+
+default: static-library
 
 clean-build:
 	rm -rf $(BUILD)

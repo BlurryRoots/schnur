@@ -71,6 +71,26 @@ string_free( string_t* self )
 }
 
 /*
+    Raw implementation for string filling.
+*/
+void
+raw_string_fill_n( string_t* self, wchar_t c, size_t n )
+{
+    size_t i;
+
+    if( 0 == n )
+    {
+        return;
+    }
+
+    for( i = 0; i < n; ++i )
+    {
+        self->data[i] = c;
+    }
+    self->data[n - 1] = '\0'; 
+}
+
+/*
     Fills string with given character.
     This fills the entire string (full capacity) and not
     only the used length.
@@ -107,26 +127,6 @@ string_fill_n( string_t* self, wchar_t c, size_t n )
     raw_string_fill_n( self, c, n );
 
     return 1;
-}
-
-/*
-    Raw implementation for string filling.
-*/
-void
-raw_string_fill_n( string_t* self, wchar_t c, size_t n )
-{
-    size_t i;
-
-    if( 0 == n )
-    {
-        return;
-    }
-
-    for( i = 0; i < n; ++i )
-    {
-        self->data[i] = c;
-    }
-    self->data[n - 1] = '\0'; 
 }
 
 /*
@@ -296,6 +296,69 @@ string_append( string_t* self, wchar_t c )
 
     self->data[self->length++] = c;
     self->data[self->length] = '\0';
+
+    return 1;
+}
+
+/*
+    Appends given character array to string.
+    @returns: 1 on success, 0 otherwise.
+*/
+int
+string_append_cstr( string_t* self, const wchar_t* other )
+{
+    size_t len, i;
+
+    if( NULL == self
+     || NULL == other )
+    {
+        return 0;
+    }
+
+    len = wcslen( other );
+    if( 0 == len )
+    {
+        return 1;
+    }
+
+    while( self->capacity < (self->length + len + 1) )
+    {
+        string_expand( self );
+    }
+
+    for( i = 0; i < len; ++i )
+    {
+        self->data[self->length + i] = other[i];
+    }
+    self->data[self->length + len] = '\0';
+
+    return 1;
+}
+
+/*
+    Appends given string to string.
+    @returns: 1 on success, 0 otherwise.
+*/
+int
+string_append_string( string_t* self, const string_t* other )
+{
+    size_t i;
+
+    if( NULL == self
+     || NULL == other )
+    {
+        return 0;
+    }
+
+    while( self->capacity < (self->length + other->length + 1) )
+    {
+        string_expand( self );
+    }
+
+    for( i = 0; i < other->length; ++i )
+    {
+        self->data[self->length + i] = other->data[i];
+    }
 
     return 1;
 }

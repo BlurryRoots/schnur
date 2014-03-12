@@ -39,41 +39,35 @@ TEST_CASE( "string manipulation", "[string]" )
 {
     string_t* s = NULL;
 
+    s = string_new();
+    REQUIRE( NULL != s );
+
+#if 1 == SHOW_DEBUG
+    setlocale( LC_ALL, "" );
+#endif
+
     SECTION( "string_new" )
     {
-        s = string_new();
-        REQUIRE( s != NULL );
-
-        REQUIRE( s->data != NULL );
-        REQUIRE( s->capacity == STRING_BLOCK_SIZE );
-        REQUIRE( s->length == 0 );
-
-        string_free( s );
+        REQUIRE( NULL != s->data );
+        REQUIRE( STRING_BLOCK_SIZE == s->capacity );
+        REQUIRE( 0 == s->length );
     }
 
     SECTION( "string_expand" )
     {
-        s = string_new();
-        REQUIRE( s != NULL );
-
         string_expand( s );
 
-        REQUIRE( s->data != NULL );
-        REQUIRE( s->capacity == 2 * STRING_BLOCK_SIZE );
-
-        string_free( s );
+        REQUIRE( NULL != s->data );
+        REQUIRE( (2 * STRING_BLOCK_SIZE) == s->capacity );
     }
 
     SECTION( "string_compact" )
     {
-        s = string_new();
-        REQUIRE( s != NULL );
-
         string_expand( s );
         string_expand( s ); // 3 * STRING_BLOCK_SIZE
 
-        REQUIRE( s->data != NULL );
-        REQUIRE( s->capacity == 3 * STRING_BLOCK_SIZE );
+        REQUIRE( NULL != s->data );
+        REQUIRE( (3 * STRING_BLOCK_SIZE) == s->capacity );
 
         string_fill( s, L'=' );
 
@@ -84,10 +78,8 @@ TEST_CASE( "string manipulation", "[string]" )
         // and freeable memory of 1 * STRING_BLOCK_SIZE
         s->data[s->length] = '\0';
 
-        REQUIRE( string_compact( s ) == 1 );
-        REQUIRE( s->capacity == 2 * STRING_BLOCK_SIZE );
-
-        string_free( s );
+        REQUIRE( 1 == string_compact( s ) );
+        REQUIRE( (2 * STRING_BLOCK_SIZE) == s->capacity );
     }
 
     SECTION( "string_copy_cstr" )
@@ -95,15 +87,10 @@ TEST_CASE( "string manipulation", "[string]" )
         const wchar_t* w = L"Hänsel mag Soße!";
         const size_t l =  wcslen( w );
 
-        s = string_new();
-        REQUIRE( s != NULL );
-
         REQUIRE( wcslen( w ) == l );
         string_copy_cstr( s, w );
 
-        REQUIRE( wcsncmp( s->data, w, l ) == 0 );
-
-        string_free( s );
+        REQUIRE( 0 == wcsncmp( s->data, w, l ) );
     }
 
     SECTION( "string_copy" )
@@ -112,36 +99,27 @@ TEST_CASE( "string manipulation", "[string]" )
         const size_t l = wcslen( w );
         string_t* o;
 
-        s = string_new();
-        REQUIRE( s != NULL );
-
         REQUIRE( wcslen( w ) == l );
         string_copy_cstr( s, w );
 
-        REQUIRE( wcsncmp( s->data, w, l ) == 0 );
+        REQUIRE( 0 == wcsncmp( s->data, w, l ) );
 
         o = string_new();
-        REQUIRE( s != NULL );
+        REQUIRE( NULL != o );
 
         string_copy( o, s );
-        REQUIRE( wcsncmp( s->data, o->data, l ) == 0 );
+        REQUIRE( 0 == wcsncmp( s->data, o->data, l ) );
 
         string_free( o );
-        string_free( s );
     }
 
     SECTION( "string_append" )
     {
         const wchar_t* b = L"?";
 
-        s = string_new();
-        REQUIRE( s != NULL );
+        REQUIRE( 1 == string_append( s, b[0] ) );
 
-        REQUIRE( string_append( s, b[0] ) == 1 );
-
-        REQUIRE( wcsncmp( s->data, b, 1 ) == 0 );
-
-        string_free( s );
+        REQUIRE( 0 == wcsncmp( s->data, b, 1 ) );
     }
 
     SECTION( "string_append mass" )
@@ -149,12 +127,9 @@ TEST_CASE( "string manipulation", "[string]" )
         const int Count = 23000;
         const wchar_t* t = L"0123456789";
 
-        s = string_new();
-        REQUIRE( s != NULL );
-
         for( int i = 0; i < Count; ++i )
         {
-            REQUIRE( string_append( s, t[i % 10] ) == 1 );
+            REQUIRE( 1 == string_append( s, t[i % 10] ) );
         }
 
         for( int i = 0; i < Count; ++i )
@@ -163,22 +138,51 @@ TEST_CASE( "string manipulation", "[string]" )
         }
 
         // printf( "c: %i\n", s->capacity );
+    }
 
-        string_free( s );
+    SECTION( "string_append_cstr" )
+    {
+        const wchar_t* a = L"Viel";
+        const wchar_t* b = L" Spaß!";
+        const wchar_t* both = L"Viel Spaß!";
+        const size_t l = wcslen( both );
+
+        string_copy_cstr( s, a );
+
+        REQUIRE( 1 == string_append_cstr( s, b ) );
+
+        REQUIRE( 0 == wcsncmp( s->data, both, l ) );
+    }
+
+    SECTION( "string_append_string" )
+    {
+        const wchar_t* a = L"Viel";
+        const wchar_t* b = L" Spaß!";
+        const wchar_t* both = L"Viel Spaß!";
+        const size_t l = wcslen( both );
+
+        string_t* s2;
+
+        string_copy_cstr( s, a );
+
+        s2 = string_new();
+        REQUIRE( NULL != s2 );
+        string_copy_cstr( s2, b );
+
+        REQUIRE( 1 == string_append_string( s, s2 ) );
+
+        REQUIRE( 0 == wcsncmp( s->data, both, l ) );
+
+        string_free( s2 );
     }
 
     SECTION( "string_equal_cstr" )
     {
         const wchar_t* w = L"舒适";
 
-        s = string_new();
-        REQUIRE( s != NULL );
-
         string_copy_cstr( s, w );
 
-        REQUIRE( string_equal_cstr( s, w ) == 1 );
-
-        string_free( s );
+        REQUIRE( 1 == string_equal_cstr( s, w ) );
     }
 
     SECTION( "string_equal" )
@@ -186,20 +190,17 @@ TEST_CASE( "string manipulation", "[string]" )
         const wchar_t* w = L"décontracté";
         string_t* o;
 
-        s = string_new();
-        REQUIRE( s != NULL );
         string_copy_cstr( s, w );
 
         o = string_new();
-        REQUIRE( o != NULL );
+        REQUIRE( NULL != o );
         string_copy_cstr( o, w );
 
         REQUIRE( s != o );
 
-        REQUIRE( string_equal( s, o ) == 1 );
+        REQUIRE( 1 == string_equal( s, o ) );
 
         string_free( o );
-        string_free( s );
     }
 
     SECTION( "string_reverse" )
@@ -207,13 +208,9 @@ TEST_CASE( "string manipulation", "[string]" )
         const wchar_t* w = L"солнце";
         const size_t l = wcslen( w );
 
-        s = string_new();
-        REQUIRE( NULL != s );
         string_copy_cstr( s, w );
 
 #if 1 == SHOW_DEBUG
-        setlocale( LC_ALL, "" );
-
         wprintf( L"d: %ls\n", s->data );
 #endif
 
@@ -227,7 +224,8 @@ TEST_CASE( "string manipulation", "[string]" )
         {
             REQUIRE( s->data[i] == w[l - i - 1] );
         }
-
-        string_free( s );
     }
+
+    // free string for all test
+    string_free( s );
 }
