@@ -4,10 +4,10 @@
 
 My naive approach of implementing a small library to work with object like strings in C.
 
-Clone the repository with '''git clone --recursive https://github.com/BlurryRoots/StringLibrary''', to fetch the sources as well as the [Catch library]() for building the tests.
+Clone the repository with ```git clone --recursive https://github.com/BlurryRoots/StringLibrary```, to fetch the sources as well as the [Catch library]() for building the tests.
 
-Build the library via makefile. Typing '''make''' will build the library as well
-as running all the tests.
+Build the library via makefile. Typing ```make``` will build the library as well
+as running all the tests. If you just want to build the library, type run ```make build```. Run ```make clean``` to cleanup the library and temporary files.
 
 ## Usage
 

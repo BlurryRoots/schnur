@@ -89,4 +89,6 @@ static-library: clean prepare build-static-library
 
 static-library-with-test: static-library run-test
 
+build: static-library
+
 all: static-library-with-test
