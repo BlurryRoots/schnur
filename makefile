@@ -1,12 +1,12 @@
 #
 # Copyright (c) 2013, BlurryRoots aka Sven Freiberg
-# 
+#
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
-# 
+#
 #  http://www.apache.org/licenses/LICENSE-2.0
-# 
+#
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -48,7 +48,7 @@ CPP_COMPILE_COMMAND = $(CPP_COMPILER) $(CPP_COMPILER_FLAGS)
 # cleaning
 #
 
-default: static-library
+default: all
 
 clean-build:
 	rm -rf $(BUILD)
@@ -61,14 +61,14 @@ clean-test:
 	rm -rf $(OBJECTS)/test
 
 prepare-build:
-	mkdir $(BUILD)
+	mkdir -p $(BUILD)
 
 prepare-objects:
-	mkdir $(OBJECTS)
+	mkdir -p $(OBJECTS)
 
 prepare-test:
-	mkdir $(BUILD)/test
-	mkdir $(OBJECTS)/test
+	mkdir -p $(BUILD)/test
+	mkdir -p $(OBJECTS)/test
 
 clean: clean-build clean-objects
 
@@ -82,11 +82,11 @@ build-test: clean-test prepare-test
 	$(CPP_COMPILE_COMMAND) $(INCLUDES) -c $(TEST)/$(PROJECT_NAME).c -o $(OBJECTS)/test/$(PROJECT_NAME).o $(ERROR_OUTPUT)
 	$(CPP_COMPILER) $(LIB_PATH) $(OBJECTS)/test/$(PROJECT_NAME).o $(LIBS) -o $(BUILD)/test/$(PROJECT_NAME) $(ERROR_OUTPUT)
 
-run-test:
+run-test: build-test
 	bin/test/./$(PROJECT_NAME)
 
 static-library: clean prepare build-static-library
 
-static-library-with-test: static-library build-test
+static-library-with-test: static-library run-test
 
-all: static-library-with-test run-test
+all: static-library-with-test
