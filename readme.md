@@ -11,8 +11,7 @@ as running all the tests. If you just want to build the library, type run ```mak
 
 ## Usage
 
-For examples on how to use the library, see test files. Further API documentation
-may come at some time in the future.
+For examples on how to use the library, see test files.
 
 ## Todo
 
