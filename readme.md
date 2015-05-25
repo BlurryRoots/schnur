@@ -1,6 +1,6 @@
 # Yet another string object implementation in C
 
-# Getting started
+## Getting started
 
 My naive approach of implementing a small library to work with object like strings in C.
 
