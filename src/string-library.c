@@ -20,422 +20,370 @@ limitations under the License.
 #include <stdlib.h>
 
 /*
-    Creates a new string_t instance.
+	Creates a new string_t instance.
 
-    @returns: Pointer to new string_t instance.
+	@returns: Pointer to new string_t instance.
 */
 string_t*
-string_new()
-{
-    string_t* s;
+string_new (void) {
+	string_t* s;
 
-    s = malloc( sizeof( string_t ) );
-    if( NULL == s )
-    {
-        return 0;
-    }
+	s = malloc (sizeof (string_t));
+	if (NULL == s) {
+		return 0;
+	}
 
-    s->data = calloc( STRING_BLOCK_SIZE, sizeof( wchar_t ) );
-    if( NULL == s->data )
-    {
-        free( s );
-        s = NULL;
-    }
-    else
-    {
-        s->capacity = STRING_BLOCK_SIZE;
-        s->length = 0;
-    }
+	s->data = calloc (STRING_BLOCK_SIZE, sizeof (wchar_t));
+	if (NULL == s->data) {
+		free (s);
+		s = NULL;
+	}
+	else {
+		s->capacity = STRING_BLOCK_SIZE;
+		s->length = 0;
+	}
 
-    return s;
+	return s;
 }
 
 /*
-    Frees given string_t object.
+	Frees given string_t object.
 */
 void
-string_free( string_t* self )
-{
-    if( NULL == self )
-    {
-        return;
-    }
+string_free (string_t* self) {
+	if (NULL == self) {
+		return;
+	}
 
-    if( NULL != self->data )
-    {
-        //string_fill( self, L'#' ); // why ?
-        free( self->data );
-    }
+	if (NULL != self->data) {
+		free (self->data);
+	}
 
-    free( self );
+	free (self);
 }
 
 /*
-    Raw implementation for string filling.
+	Raw implementation for string filling.
 */
 void
-raw_string_fill_n( string_t* self, wchar_t c, size_t n )
-{
-    size_t i;
+raw_string_fill_n (string_t* self, wchar_t c, size_t n) {
+	size_t i;
 
-    if( 0 == n )
-    {
-        return;
-    }
+	if (0 == n) {
+		return;
+	}
 
-    for( i = 0; i < n; ++i )
-    {
-        self->data[i] = c;
-    }
-    self->data[n - 1] = '\0'; 
+	for (i = 0; i < n; ++i) {
+		self->data[i] = c;
+	}
+	self->data[n - 1] = '\0';
 }
 
 /*
-    Fills string with given character.
-    This fills the entire string (full capacity) and not
-    only the used length.
+	Fills string with given character.
+	This fills the entire string (full capacity) and not
+	only the used length.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_fill( string_t* self, wchar_t c )
-{
-    if( NULL == self )
-    {
-        return 0;
-    }
+string_fill (string_t* self, wchar_t c) {
+	if (NULL == self) {
+		return 0;
+	}
 
-    raw_string_fill_n( self, c, self->capacity );
+	raw_string_fill_n (self, c, self->capacity);
 
-    return 1;
+	return 1;
 }
 
 /*
-    Fills n places of string with given character.
+	Fills n places of string with given character.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_fill_n( string_t* self, wchar_t c, size_t n )
+string_fill_n (string_t* self, wchar_t c, size_t n)
 {
-    if( NULL == self
-     || n > self->capacity )
-    {
-        return 0;
-    }
+	if (NULL == self
+	 || n > self->capacity) {
+		return 0;
+	}
 
-    raw_string_fill_n( self, c, n );
+	raw_string_fill_n (self, c, n);
 
-    return 1;
+	return 1;
 }
 
 /*
-    Expands the capacity of string according to STRING_BLOCK_SIZE.
+	Expands the capacity of string according to STRING_BLOCK_SIZE.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_expand( string_t* self )
-{
-    wchar_t* buffer;
+string_expand (string_t* self) {
+	wchar_t* buffer;
 
-    if( NULL == self )
-    {
-        return 0;
-    }
+	if (NULL == self) {
+		return 0;
+	}
 
-    buffer = calloc(
-        self->capacity + STRING_BLOCK_SIZE,
-        sizeof( wchar_t )
-    );
-    if( NULL == buffer )
-    {
-        return 0;
-    }
+	buffer = calloc (
+		self->capacity + STRING_BLOCK_SIZE,
+		sizeof (wchar_t)
+	);
+	if (NULL == buffer) {
+		return 0;
+	}
 
-    wcsncpy( buffer, self->data, self->length );
-    buffer[self->length] = L'\0';
+	wcsncpy (buffer, self->data, self->length);
+	buffer[self->length] = L'\0';
 
-    //string_fill( self, L'#' ); // why ?
-    free( self->data );
+	free (self->data);
 
-    self->data = buffer;
-    self->capacity += STRING_BLOCK_SIZE;
+	self->data = buffer;
+	self->capacity += STRING_BLOCK_SIZE;
 
-    return 1;
+	return 1;
 }
 
 /*
-    Compacts string capacity to minimize allocated space, while
-    still able to hold all used places (length).
+	Compacts string capacity to minimize allocated space, while
+	still able to hold all used places (length).
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_compact( string_t* self )
-{
-    size_t diff, memoff;
-    wchar_t* buffer;
+string_compact (string_t* self) {
+	size_t diff, memoff;
+	wchar_t* buffer;
 
-    if( NULL == self )
-    {
-        return 0;
-    }
+	if (NULL == self) {
+		return 0;
+	}
 
-    diff = self->capacity - (self->length + 1); // \0
+	diff = self->capacity - (self->length + 1); // \0
 
-    memoff = diff % STRING_BLOCK_SIZE;
-    if( memoff > 0 )
-    {
-        buffer = calloc(
-            self->length + 1 + memoff, // len + \0 + offset
-            sizeof( wchar_t )
-        );
-        if( NULL == buffer )
-        {
-            return 0;
-        }
+	memoff = diff % STRING_BLOCK_SIZE;
+	if (memoff > 0) {
+		buffer = calloc (
+			self->length + 1 + memoff, // len + \0 + offset
+			sizeof (wchar_t)
+		);
+		if (NULL == buffer) {
+			return 0;
+		}
 
-        wcsncpy( buffer, self->data, self->length + 1 + memoff );
+		wcsncpy (buffer, self->data, self->length + 1 + memoff);
 
-        //string_fill( self, L'#' ); // why ?
-        free( self->data );
-        self->data = buffer;
+		free (self->data);
+		self->data = buffer;
 
-        self->capacity = self->length + 1 + memoff;
-    }
+		self->capacity = self->length + 1 + memoff;
+	}
 
-    return 1;
+	return 1;
 }
 
 /*
-    Copies the actually used data (length) of other to self.
-    If other is longer than the capacity of self, self is
-    expanded.
+	Copies the actually used data (length) of other to self.
+	If other is longer than the capacity of self, self is
+	expanded.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_copy( string_t* self, const string_t* other )
-{    
-    if( NULL == self || NULL == other )
-    {
-        return 0;
-    }
-    
-    while( self->capacity <= other->length )
-    {
-        if( ! string_expand( self ) )
-        {
-            return 0;
-        }
-    }
+string_copy (string_t* self, const string_t* other) {
+	if (NULL == self || NULL == other) {
+		return 0;
+	}
 
-    wcsncpy( self->data, other->data, other->length );
-    self->length = other->length;
-    self->data[self->length] = L'\0';
+	while (self->capacity <= other->length) {
+		if (! string_expand (self)) {
+			return 0;
+		}
+	}
 
-    return 1;
+	wcsncpy (self->data, other->data, other->length);
+	self->length = other->length;
+	self->data[self->length] = L'\0';
+
+	return 1;
 }
 
 /*
-    Copies given character array to self.
-    If array is longer than the capacity of self, self is
-    expanded.
+	Copies given character array to self.
+	If array is longer than the capacity of self, self is
+	expanded.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_copy_cstr( string_t* self, const wchar_t* other )
-{
-    size_t ol;
+string_copy_cstr (string_t* self, const wchar_t* other) {
+	size_t ol;
 
-    if( NULL == self || NULL == other )
-    {
-        return 0;
-    }
+	if (NULL == self || NULL == other) {
+		return 0;
+	}
 
-    ol = wcslen( other );
+	ol = wcslen (other);
 
-    while( self->capacity <= ol )
-    {
-        if( ! string_expand( self ) )
-        {
-            return 0;
-        }
-    }
+	while (self->capacity <= ol) {
+		if (! string_expand (self)) {
+			return 0;
+		}
+	}
 
-    wcsncpy( self->data, other, ol );
-    self->length = ol;
-    self->data[self->length] = L'\0';
+	wcsncpy (self->data, other, ol);
+	self->length = ol;
+	self->data[self->length] = L'\0';
 
-    return 1;
+	return 1;
 }
 
 /*
-    Appends given character. Capacity of string might get
-    expanded to hold the additional character.
+	Appends given character. Capacity of string might get
+	expanded to hold the additional character.
 
-    @returns: 1 on success, 0 otherwise.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append( string_t* self, wchar_t c )
-{
-    if( NULL == self )
-    {
-        return 0;
-    }
+string_append (string_t* self, wchar_t c) {
+	if (NULL == self) {
+		return 0;
+	}
 
-    if( (self->length + 1) >= self->capacity )
-    {
-        if( ! string_expand( self ) )
-        {
-            return 0;
-        }
-    }
+	if ((self->length + 1) >= self->capacity) {
+		if (! string_expand (self)) {
+			return 0;
+		}
+	}
 
-    self->data[self->length++] = c;
-    self->data[self->length] = '\0';
+	self->data[self->length++] = c;
+	self->data[self->length] = '\0';
 
-    return 1;
+	return 1;
 }
 
 /*
-    Appends given character array to string.
-    @returns: 1 on success, 0 otherwise.
+	Appends given character array to string.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append_cstr( string_t* self, const wchar_t* other )
-{
-    size_t len, i;
+string_append_cstr (string_t* self, const wchar_t* other) {
+	size_t len, i;
 
-    if( NULL == self
-     || NULL == other )
-    {
-        return 0;
-    }
+	if (NULL == self
+	 || NULL == other) {
+		return 0;
+	}
 
-    len = wcslen( other );
-    if( 0 == len )
-    {
-        return 1;
-    }
+	len = wcslen (other);
+	if (0 == len) {
+		return 1;
+	}
 
-    while( self->capacity < (self->length + len + 1) )
-    {
-        string_expand( self );
-    }
+	while (self->capacity < (self->length + len + 1)) {
+		string_expand (self);
+	}
 
-    for( i = 0; i < len; ++i )
-    {
-        self->data[self->length + i] = other[i];
-    }
-    self->data[self->length + len] = '\0';
+	for (i = 0; i < len; ++i) {
+		self->data[self->length + i] = other[i];
+	}
+	self->data[self->length + len] = '\0';
 
-    return 1;
+	return 1;
 }
 
 /*
-    Appends given string to string.
-    @returns: 1 on success, 0 otherwise.
+	Appends given string to string.
+	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append_string( string_t* self, const string_t* other )
-{
-    size_t i;
+string_append_string (string_t* self, const string_t* other) {
+	size_t i;
 
-    if( NULL == self
-     || NULL == other )
-    {
-        return 0;
-    }
+	if (NULL == self
+	 || NULL == other) {
+		return 0;
+	}
 
-    while( self->capacity < (self->length + other->length + 1) )
-    {
-        string_expand( self );
-    }
+	while (self->capacity < (self->length + other->length + 1)) {
+		string_expand (self);
+	}
 
-    for( i = 0; i < other->length; ++i )
-    {
-        self->data[self->length + i] = other->data[i];
-    }
+	for (i = 0; i < other->length; ++i) {
+		self->data[self->length + i] = other->data[i];
+	}
 
-    return 1;
+	return 1;
 }
 
 /*
-    Check if used data of self equals given character array.
+	Check if used data of self equals given character array.
 
-    @returns: 1 on equality, 0 otherwise.
+	@returns: 1 on equality, 0 otherwise.
 */
 int
-string_equal_cstr( const string_t* self, const wchar_t* other )
-{
-    size_t ol;
+string_equal_cstr (const string_t* self, const wchar_t* other) {
+	size_t ol;
 
-    if( NULL == self
-     || NULL == other )
-    {
-        return 0;
-    }
+	if (NULL == self
+	 || NULL == other) {
+		return 0;
+	}
 
-    ol = wcslen( other );
+	ol = wcslen (other);
 
-    return self->length == ol
-        && 0 == wcsncmp( self->data, other, ol );
+	return self->length == ol
+		&& 0 == wcsncmp (self->data, other, ol);
 }
 
 /*
-    Check if used data of self equals used data of other.
+	Check if used data of self equals used data of other.
 
-    @returns: 1 on equality, 0 otherwise.
+	@returns: 1 on equality, 0 otherwise.
 */
 int
-string_equal( const string_t* self, const string_t* other )
-{
-    if( NULL == self
-     || NULL == other )
-    {
-        return 0;
-    }
+string_equal (const string_t* self, const string_t* other) {
+	if (NULL == self
+	 || NULL == other) {
+		return 0;
+	}
 
-    return self->length == other->length
-        && 0 == wcsncmp( self->data, other->data, self->length );
+	return self->length == other->length
+		&& 0 == wcsncmp (self->data, other->data, self->length);
 }
 
 /*
-    Reverses actually used data of string.
+	Reverses actually used data of string in place.
 
-    @returns: 1 on success, 0 when given a nullpointer.
+	@returns: 1 on success, 0 when given a nullpointer.
 */
 int
-string_reverse( string_t* self )
-{
-    wchar_t buffer;
-    int mid, n, i;
+string_reverse (string_t* self) {
+	wchar_t buffer;
+	int mid, n, i;
 
-    if( NULL == self )
-    {
-        return 0;
-    }
+	if (NULL == self) {
+		return 0;
+	}
 
-    if( 0 == self->length )
-    {
-        return 1;
-    }
+	if (0 == self->length) {
+		return 1;
+	}
 
-    i = 0;
-    n = self->length - 1;
-    mid = self->length / 2;
-    while( i < mid )
-    {
-        buffer        = self->data[i];
-        self->data[i] = self->data[n];
-        self->data[n] = buffer;
+	i = 0;
+	n = self->length - 1;
+	mid = self->length / 2;
+	while (i < mid) {
+		buffer        = self->data[i];
+		self->data[i] = self->data[n];
+		self->data[n] = buffer;
 
-        --n;
-        ++i;
-    }
+		--n;
+		++i;
+	}
 
-    return 1;
+	return 1;
 }
