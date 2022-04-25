@@ -61,7 +61,7 @@ set_property(TARGET schnuerchen PROPERTY C_STANDARD 11)
 
 #.
 add_executable(schnuerchen-test EXCLUDE_FROM_ALL
-    ${PROJECT_SOURCE_DIR}/test/string-library.cpp
+    ${PROJECT_SOURCE_DIR}/test/main.cpp
 )
 target_include_directories(schnuerchen PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Catch/include>

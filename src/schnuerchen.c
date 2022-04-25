@@ -1,7 +1,7 @@
 /*
-StringLibrary License 1.0
+schnuerchen License 1.0
 
-Copyright (c) 2013 - 2015 Sven Freiberg
+Copyright (c) 2013 - ∞ Sven Freiberg
 
 All rights reserved.
 
@@ -31,9 +31,9 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 
-#include "string-library.h"
-
 #include <stdlib.h>
+
+#include <schnuerchen.h>
 
 /*
 	Creates a new string_t instance.

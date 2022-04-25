@@ -1,7 +1,7 @@
 /*
-StringLibrary License 1.0
+schnuerchen License 1.0
 
-Copyright (c) 2013 - 2015 Sven Freiberg
+Copyright (c) 2013 - ∞ Sven Freiberg
 
 All rights reserved.
 
