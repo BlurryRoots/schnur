@@ -36,146 +36,153 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef Blurryroots_String_Library_h
 #define Blurryroots_String_Library_h
 
-#define STRING_BLOCK_SIZE 32
+#define SCHNUR_BLOCK_SIZE 32
 
 /*
-	String structure
+	@brief: Represents a string of characters.
 */
-struct string_t {
+struct schnur {
 	/*
-		Character array containing all data used by
-		this string object.
+		@brief: Character array containing all data used by this string object.
 	*/
 	wchar_t* data;
 
 	/*
-		Number of characters used. In other words
-		the position of the null terminator (\0).
+		@brief: Number of characters used. In other words the position of the
+				  null terminator (\0).
 	*/
 	size_t length;
 	/*
-		Maximum number of characters this string can hold.
+		@brief: Maximum number of characters this string can hold.
 	*/
 	size_t capacity;
 };
 typedef
-	struct string_t
-	string_t;
+	struct schnur
+	schnur_t;
 
 /*
-	Creates a new string_t instance.
+	@brief: Creates a new schnur_t instance.
 
-	@returns: Pointer to new string_t instance.
+	@returns: Pointer to new schnur_t instance.
 */
-string_t*
-string_new (void);
+schnur_t*
+schnur_new (void);
 
 /*
-	Frees given string_t object.
+	@brief: Frees given schnur_t object.
 */
 void
-string_free (string_t* self);
+schnur_free (schnur_t* self);
 
 /*
-	Fills string with given character.
+	@brief: Fills string with given character.
+
 	This fills the entire string (full capacity) and not
 	only the used length.
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_fill (string_t* self, wchar_t c);
+schnur_fill (schnur_t* self, wchar_t c);
 
 /*
-	Fills n places of string with given character.
+	@brief: Fills n places of string with given character.
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_fill_n (string_t* self, wchar_t c, size_t n);
+schnur_fill_n (schnur_t* self, wchar_t c, size_t n);
 
 /*
-	Expands the capacity of string according to STRING_BLOCK_SIZE.
+	@brief: Expands the capacity of string according to SCHNUR_BLOCK_SIZE.
+
+	@see SCHNUR_BLOCK_SIZE
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_expand (string_t* self);
+schnur_expand (schnur_t* self);
 
 /*
-	Compacts string capacity to minimize allocated space, while
-	still able to hold all used places (length).
+	@brief: Compacts string capacity to minimize allocated space, while still
+	        able to hold all used places (length).
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_compact (string_t* self);
+schnur_compact (schnur_t* self);
 
 /*
-	Copies the actually used data (length) of other to self.
+	@brief: Copies the actually used data (length) of other to self.
+
 	If other is longer than the capacity of self, self is
 	expanded.
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_copy (string_t* self, const string_t* other);
+schnur_copy (schnur_t* self, const schnur_t* other);
 
 /*
-	Copies given character array to self.
+	@brief: Copies given character array to self.
+	
 	If array is longer than the capacity of self, self is
 	expanded.
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_copy_cstr (string_t* self, const wchar_t* other);
+schnur_copy_cstr (schnur_t* self, const wchar_t* other);
 
 /*
-	Appends given character. Capacity of string might get
-	expanded to hold the additional character.
+	@brief: Appends given character.
+
+	Capacity of string might get expanded to hold the additional character.
 
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append (string_t* self, wchar_t c);
+schnur_append (schnur_t* self, wchar_t c);
 
 /*
-	Appends given character array to string.
+	@brief: Appends given character array to string.
+
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append_cstr (string_t* self, const wchar_t* other);
+schnur_append_cstr (schnur_t* self, const wchar_t* other);
 
 /*
-	Appends given string to string.
+	@brief: Appends given string to string.
+
 	@returns: 1 on success, 0 otherwise.
 */
 int
-string_append_string (string_t* self, const string_t* other);
+schnur_append_string (schnur_t* self, const schnur_t* other);
 
 /*
-	Check if used data of self equals given character array.
+	@brief: Check if used data of self equals given character array.
 
 	@returns: 1 on equality, 0 otherwise.
 */
 int
-string_equal_cstr (const string_t* self, const wchar_t* other);
+schnur_equal_cstr (const schnur_t* self, const wchar_t* other);
 
 /*
-	Check if used data of self equals used data of other.
+	@brief: Check if used data of self equals used data of other.
 
 	@returns: 1 on equality, 0 otherwise.
 */
 int
-string_equal (const string_t* self, const string_t* other);
+schnur_equal (const schnur_t* self, const schnur_t* other);
 
 /*
-	Reverses actually used data of string.
+	@brief: Reverses actually used data of string.
 
 	@returns: 1 on success, 0 when given a nullpointer.
 */
 int
-string_reverse (string_t* self);
+schnur_reverse (schnur_t* self);
 
 #endif
