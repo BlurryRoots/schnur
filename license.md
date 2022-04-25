@@ -1,4 +1,4 @@
-schnuerchen License 1.0
+schnur License 1.0
 
 Copyright (c) 2013 - ∞ Sven Freiberg
 

@@ -1,7 +1,7 @@
 // Copyright (c) 2013 - ∞ Sven Freiberg. All rights reserved.
 // See license.md for details.
 /*! \file schnuerchen.h
-	\brief Declares functions to manage a string of characters as a structure.
+	\brief Declares functions to manage a string of characters known as schnur.
 
 	^^
 */

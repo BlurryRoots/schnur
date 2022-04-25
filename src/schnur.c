@@ -3,7 +3,7 @@
 
 #include <stdlib.h>
 
-#include <schnuerchen.h>
+#include <schnur.h>
 
 /**
 	@brief: Represents a string of characters.
@@ -150,7 +150,7 @@ schnur_terminate (struct schnur* self, size_t i) {
 	}
 
 	self->length = i + 1;
-	self->data[i] = L'\0';
+	self->data[i] = SCHNUR_C ('\0');
 
 	return 1;
 }
@@ -169,7 +169,7 @@ __schnur_fill_n (struct schnur* self, wchar_t c, size_t n) {
 	for (i = 0; i < n; ++i) {
 		self->data[i] = c;
 	}
-	self->data[n - 1] = L'\0';
+	self->data[n - 1] = SCHNUR_C ('\0');
 
 	self->length = n;
 
@@ -212,7 +212,7 @@ schnur_expand (struct schnur* self) {
 	}
 
 	wcsncpy (buffer, self->data, self->length);
-	buffer[self->length] = L'\0';
+	buffer[self->length] = SCHNUR_C ('\0');
 
 	free (self->data);
 
@@ -269,7 +269,7 @@ schnur_copy (struct schnur* self, const struct schnur* other) {
 
 	wcsncpy (self->data, other->data, other->length);
 	self->length = other->length;
-	self->data[self->length] = L'\0';
+	self->data[self->length] = SCHNUR_C ('\0');
 
 	return 1;
 }
@@ -310,7 +310,7 @@ schnur_append (struct schnur* self, wchar_t c) {
 	}
 
 	self->data[self->length++] = c;
-	self->data[self->length] = '\0';
+	self->data[self->length] = SCHNUR_C ('\0');
 
 	return 1;
 }
@@ -336,7 +336,7 @@ schnur_append_cstr (struct schnur* self, const wchar_t* other) {
 	for (i = 0; i < len; ++i) {
 		self->data[self->length + i] = other[i];
 	}
-	self->data[self->length + len] = '\0';
+	self->data[self->length + len] = SCHNUR_C ('\0');
 
 	return 1;
 }
