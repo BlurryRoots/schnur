@@ -10,12 +10,12 @@
 #include <catch.hpp>
 
 extern "C" {
-	#include <schnuerchen.h>
-
 	#include <stdlib.h>
 	#include <stdio.h>
 	#include <wchar.h>
 	#include <locale.h>
+
+	#include <schnur.h>
 }
 
 #include <iostream>
