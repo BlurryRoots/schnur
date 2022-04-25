@@ -1,188 +1,282 @@
-/*
-schnuerchen License 1.0
+// Copyright (c) 2013 - ∞ Sven Freiberg. All rights reserved.
+// See license.md for details.
+/*! \file schnuerchen.h
+	\brief Declares functions to manage a string of characters as a structure.
 
-Copyright (c) 2013 - ∞ Sven Freiberg
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. This software may not be used in products designed to harm,
-   injure or oppress living creatures.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+	^^
 */
-
 
 #include <wchar.h>
 
 #ifndef Blurryroots_String_Library_h
 #define Blurryroots_String_Library_h
 
+/**
+ * The block size used for resize / reallocations.
+ */
 #define SCHNUR_BLOCK_SIZE 32
 
-/*
+#define SCHNUR(t) L##t
+#define SCHNUR_C(t) SCHNUR (t)
+
+#define SCHNUR_NULL SCHNUR_C ('\0')
+
+/**
 	@brief: Represents a string of characters.
 */
-struct schnur {
-	/*
-		@brief: Character array containing all data used by this string object.
-	*/
-	wchar_t* data;
-
-	/*
-		@brief: Number of characters used. In other words the position of the
-				  null terminator (\0).
-	*/
-	size_t length;
-	/*
-		@brief: Maximum number of characters this string can hold.
-	*/
-	size_t capacity;
-};
+struct schnur;
+/**
+ * @brief Convenience typedef for struct schnur.
+ * @see struct schnur
+ */
 typedef
 	struct schnur
 	schnur_t;
 
-/*
-	@brief: Creates a new schnur_t instance.
-
-	@returns: Pointer to new schnur_t instance.
-*/
-schnur_t*
+/**
+ * @brief      Creates a new schnur_t instance.
+ *
+ * @return     Pointer to new schnur_t instance.
+ */
+struct schnur*
 schnur_new (void);
 
-/*
-	@brief: Frees given schnur_t object.
-*/
+/**
+ * @brief      Creates a new schnur_t instance.
+ * 
+ * @param      s  The string to use as inital value.
+ *
+ * @return     Pointer to new schnur_t instance.
+ */
+struct schnur*
+schnur_new_s (const wchar_t* s);
+
+/**
+ * @brief      Frees given schnur_t object.
+ *
+ * @param      self  A schnur pointer.
+ */
 void
-schnur_free (schnur_t* self);
+schnur_free (struct schnur* self);
 
-/*
-	@brief: Fills string with given character.
 
-	This fills the entire string (full capacity) and not
-	only the used length.
+/**
+ * @brief      Retrieves the raw storage pointer of this schnur.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     The raw pointer;
+ */
+void*
+schnur_data (const struct schnur* self);
 
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Retrieves the raw storage pointer of this schnur.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  i     Index of character to fetch.
+ *
+ * @return     Character at index or '\0' if arguments where invalid.
+ */
+wchar_t
+schnur_get (const struct schnur* self, size_t i);
+
+/**
+ * @brief      Sets the character at given index.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  c     Character to set.
+ * @param[in]  n     Index where to set the character.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_fill (schnur_t* self, wchar_t c);
+schnur_set (struct schnur* self, size_t i, wchar_t c);
 
-/*
-	@brief: Fills n places of string with given character.
+/**
+ * @brief      Retrieves the number of bytes allocated by this schnur.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     The size in bytes of this schnur's data.
+ */
+size_t
+schnur_data_size (const struct schnur* self);
 
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Retrieves the number of currently stored characters.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     The number of characters used by this schnur.
+ */
+size_t
+schnur_length (const struct schnur* self);
+
+/**
+ * @brief      Retrieves the maximum number of characters to be potentially stored.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     The maximum number of characters able to be used by this schnur.
+ */
+size_t
+schnur_capacity (const struct schnur* self);
+
+/**
+ * @brief      Will change this schnur to end at given index.
+ * 
+ * This will null terminate this schnur at given index regardless of previous
+ * length. Has to be smaller than maximum capacity though.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  n     Number of characters to fill schnur with.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_fill_n (schnur_t* self, wchar_t c, size_t n);
+schnur_terminate (struct schnur* self, size_t n);
 
-/*
-	@brief: Expands the capacity of string according to SCHNUR_BLOCK_SIZE.
-
-	@see SCHNUR_BLOCK_SIZE
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Fills string with given character.
+ * 
+ * This fills the entire string (full capacity) and not only the used length.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  c     Character used for filling.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_expand (schnur_t* self);
+schnur_fill (struct schnur* self, wchar_t c);
 
-/*
-	@brief: Compacts string capacity to minimize allocated space, while still
-	        able to hold all used places (length).
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Fills n places of string with given character.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  c     Character used for filling.
+ * @param[in]  n     Number of characters to fill schnur with.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_compact (schnur_t* self);
+schnur_fill_n (struct schnur* self, wchar_t c, size_t n);
 
-/*
-	@brief: Copies the actually used data (length) of other to self.
-
-	If other is longer than the capacity of self, self is
-	expanded.
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Expands the capacity of string according to SCHNUR_BLOCK_SIZE.
+ *
+ * @see SCHNUR_BLOCK_SIZE
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_copy (schnur_t* self, const schnur_t* other);
+schnur_expand (struct schnur* self);
 
-/*
-	@brief: Copies given character array to self.
-	
-	If array is longer than the capacity of self, self is
-	expanded.
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Compacts string capacity to minimize allocated space, while still
+ * able to hold all used places (length).
+ * 
+ * 
+ * @param      self  A schnur pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_copy_cstr (schnur_t* self, const wchar_t* other);
+schnur_compact (struct schnur* self);
 
-/*
-	@brief: Appends given character.
-
-	Capacity of string might get expanded to hold the additional character.
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Copies the actually used data (length) of other to self.
+ *
+ * If other is longer than the capacity of self, self is expanded.
+ *
+ * @param      self   A schnur pointer.
+ * @param[in]  other  Another schnur pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_append (schnur_t* self, wchar_t c);
+schnur_copy (struct schnur* self, const struct schnur* other);
 
-/*
-	@brief: Appends given character array to string.
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Copies given character array to self.
+ *
+ * If array is longer than the capacity of self, self is expanded.
+ *
+ * @param      self   A schnur pointer.
+ * @param[in]  other  A character array pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_append_cstr (schnur_t* self, const wchar_t* other);
+schnur_copy_cstr (struct schnur* self, const wchar_t* other);
 
-/*
-	@brief: Appends given string to string.
-
-	@returns: 1 on success, 0 otherwise.
-*/
+/**
+ * @brief      Appends given character.
+ *
+ * Capacity of string might get expanded to hold the additional character.
+ *
+ * @param      self  A schnur pointer.
+ * @param[in]  c     A character to append.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_append_string (schnur_t* self, const schnur_t* other);
+schnur_append (struct schnur* self, wchar_t c);
 
-/*
-	@brief: Check if used data of self equals given character array.
-
-	@returns: 1 on equality, 0 otherwise.
-*/
+/**
+ * @brief      Appends given character array to string.
+ *
+ * @param      self   A schnur pointer.
+ * @param[in]  other  A character array pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_equal_cstr (const schnur_t* self, const wchar_t* other);
+schnur_append_cstr (struct schnur* self, const wchar_t* other);
 
-/*
-	@brief: Check if used data of self equals used data of other.
-
-	@returns: 1 on equality, 0 otherwise.
-*/
+/**
+ * @brief      Appends given string to string.
+ *
+ * @param      self   A schnur pointer.
+ * @param[in]  other  Another schnur pointer.
+ *
+ * @return     1 on success, 0 otherwise.
+ */
 int
-schnur_equal (const schnur_t* self, const schnur_t* other);
+schnur_append_string (struct schnur* self, const struct schnur* other);
 
-/*
-	@brief: Reverses actually used data of string.
-
-	@returns: 1 on success, 0 when given a nullpointer.
-*/
+/**
+ * @brief      Check if used data of self equals given character array.
+ *
+ * @param[in]  self   A schnur pointer.
+ * @param[in]  other  A character array pointer.
+ *
+ * @return     1 on equality, 0 otherwise.
+ */
 int
-schnur_reverse (schnur_t* self);
+schnur_equal_cstr (const struct schnur* self, const wchar_t* other);
+
+/**
+ * @brief      Check if used data of self equals used data of other.
+ *
+ * @param[in]  self   A schnur pointer.
+ * @param[in]  other  Another schnur pointer.
+ *
+ * @return     1 on equality, 0 otherwise.
+ */
+int
+schnur_equal (const struct schnur* self, const struct schnur* other);
+
+/**
+ * @brief      Reverses actually used data of string.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     1 on success, 0 when given a nullpointer.
+ */
+int
+schnur_reverse (struct schnur* self);
 
 #endif

@@ -60,107 +60,109 @@ TEST_CASE ("string manipulation", "[string]") {
 #endif
 
 	SECTION ("schnur_new") {
-		REQUIRE (NULL != s->data);
-		REQUIRE (SCHNUR_BLOCK_SIZE == s->capacity);
-		REQUIRE (0 == s->length);
+		REQUIRE (NULL != schnur_data (s));
+		REQUIRE (SCHNUR_BLOCK_SIZE == schnur_capacity (s));
+		REQUIRE (0 == schnur_length (s));
 	}
 
 	SECTION ("schnur_expand") {
 		schnur_expand (s);
 
-		REQUIRE (NULL != s->data);
-		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == s->capacity);
+		REQUIRE (NULL != schnur_data (s));
+		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
 	}
 
 	SECTION ("schnur_compact") {
 		schnur_expand (s);
 		schnur_expand (s); // 3 * SCHNUR_BLOCK_SIZE
 
-		REQUIRE (NULL != s->data);
-		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == s->capacity);
+		REQUIRE (NULL != schnur_data (s));
+		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
 
-		schnur_fill (s, L'=');
+		REQUIRE (1 == schnur_fill (s, SCHNUR_C ('X')));
 
-		s->length =
+		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_length (s));		
+
+		size_t cutoff_length =
 			(2 * SCHNUR_BLOCK_SIZE - 1)
 			- (SCHNUR_BLOCK_SIZE / 2);
 		// produces a memory offset of half the block size
 		// and freeable memory of 1 * SCHNUR_BLOCK_SIZE
-		s->data[s->length] = '\0';
+		REQUIRE (1 == schnur_terminate (s, cutoff_length));
 
 		REQUIRE (1 == schnur_compact (s));
-		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == s->capacity);
+		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
 	}
 
 	SECTION ("schnur_copy_cstr") {
-		const wchar_t* w = L"Hänsel mag Soße!";
+		const wchar_t* w = SCHNUR ("Hänsel mag Soße!");
 		const size_t l =  wcslen (w);
 
 		REQUIRE (wcslen (w) == l);
 		schnur_copy_cstr (s, w);
 
-		REQUIRE (0 == wcsncmp (s->data, w, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
 	}
 
 	SECTION ("schnur_copy") {
-		const wchar_t* w = L"ευχαριστημένος";
+		const wchar_t* w = SCHNUR ("ευχαριστημένος");
 		const size_t l = wcslen (w);
 		schnur_t* o;
 
 		REQUIRE (wcslen (w) == l);
 		schnur_copy_cstr (s, w);
 
-		REQUIRE (0 == wcsncmp (s->data, w, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
 
 		o = schnur_new ();
 		REQUIRE (NULL != o);
 
 		schnur_copy (o, s);
-		REQUIRE (0 == wcsncmp (s->data, o->data, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), (wchar_t*)schnur_data (o), l));
 
 		schnur_free (o);
 	}
 
 	SECTION( "schnur_append" ) {
-		const wchar_t* b = L"?";
+		const wchar_t* b = SCHNUR ("?");
 
 		REQUIRE (1 == schnur_append (s, b[0]));
 
-		REQUIRE (0 == wcsncmp (s->data, b, 1));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), b, 1));
 	}
 
 	SECTION ("schnur_append mass") {
 		const int Count = 23000;
-		const wchar_t* t = L"0123456789";
+		const wchar_t* t = SCHNUR ("0123456789");
 
 		for (int i = 0; i < Count; ++i) {
 			REQUIRE (1 == schnur_append (s, t[i % 10]));
 		}
 
 		for (int i = 0; i < Count; ++i) {
-			REQUIRE (s->data[i] == t[i % 10]);
+			REQUIRE (((wchar_t*)schnur_data (s))[i] == t[i % 10]);
 		}
 
-		REQUIRE (Count == s->length);
+		REQUIRE (Count == schnur_length (s));
 	}
 
 	SECTION ("schnur_append_cstr") {
-		const wchar_t* a = L"Viel";
-		const wchar_t* b = L" Spaß!";
-		const wchar_t* both = L"Viel Spaß!";
+		const wchar_t* a = SCHNUR ("Viel");
+		const wchar_t* b = SCHNUR (" Spaß!");
+		const wchar_t* both = SCHNUR ("Viel Spaß!");
 		const size_t l = wcslen( both );
 
 		schnur_copy_cstr (s, a);
 
 		REQUIRE (1 == schnur_append_cstr (s, b));
 
-		REQUIRE (0 == wcsncmp (s->data, both, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), both, l));
 	}
 
 	SECTION ("schnur_append_string") {
-		const wchar_t* a = L"Viel";
-		const wchar_t* b = L" Spaß!";
-		const wchar_t* both = L"Viel Spaß!";
+		const wchar_t* a = SCHNUR ("Viel");
+		const wchar_t* b = SCHNUR (" Spaß!");
+		const wchar_t* both = SCHNUR ("Viel Spaß!");
 		const size_t l = wcslen (both);
 
 		schnur_t* s2;
@@ -173,13 +175,13 @@ TEST_CASE ("string manipulation", "[string]") {
 
 		REQUIRE (1 == schnur_append_string (s, s2));
 
-		REQUIRE (0 == wcsncmp (s->data, both, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), both, l));
 
 		schnur_free (s2);
 	}
 
 	SECTION ("schnur_equal_cstr") {
-		const wchar_t* w = L"舒适";
+		const wchar_t* w = SCHNUR ("舒适");
 
 		schnur_copy_cstr (s, w);
 
@@ -187,7 +189,7 @@ TEST_CASE ("string manipulation", "[string]") {
 	}
 
 	SECTION ("schnur_equal") {
-		const wchar_t* w = L"décontracté";
+		const wchar_t* w = SCHNUR ("décontracté");
 		schnur_t* o;
 
 		schnur_copy_cstr (s, w);
@@ -203,24 +205,32 @@ TEST_CASE ("string manipulation", "[string]") {
 		schnur_free (o);
 	}
 
+	SECTION ("schnur_get") {
+		schnur_t* w = schnur_new_s (SCHNUR ("Hänsel mag Soße!"));
+
+		REQUIRE (SCHNUR_C ('ä') == schnur_get (w, 1));
+
+		schnur_free (w);
+	}
+
 	SECTION ("schnur_reverse") {
-		const wchar_t* w = L"солнце";
+		const wchar_t* w = SCHNUR ("солнце");
 		const size_t l = wcslen (w);
 
 		schnur_copy_cstr (s, w);
 
 #if 1 == SHOW_DEBUG
-		wprintf (L"d: %ls\n", s->data);
+		wprintf (L"d: %ls\n", schnur_data (s));
 #endif
 
 		REQUIRE (1 == schnur_reverse (s));
 
 #if 1 == SHOW_DEBUG
-		wprintf (L"d: %ls\n", s->data);
+		wprintf (SCHNUR ("d: %ls\n"), schnur_data (s));
 #endif
 
 		for (size_t i = 0; i < l; ++i) {
-			REQUIRE (s->data[i] == w[l - i - 1]);
+			REQUIRE (((wchar_t*)schnur_data (s))[i] == w[l - i - 1]);
 		}
 	}
 

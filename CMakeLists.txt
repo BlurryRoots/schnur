@@ -69,3 +69,10 @@ target_include_directories(schnuerchen PUBLIC
 set_property(TARGET schnuerchen-test PROPERTY CXX_STANDARD 17)
 add_dependencies(schnuerchen-test schnuerchen)
 target_link_libraries(schnuerchen-test schnuerchen)
+
+# Build documentation via doxygen.
+add_custom_target (schnuerchen-docs
+    COMMAND doxygen ${PROJECT_SOURCE_DIR}/docs/Doxyfile
+        DEPENDS schnuerchen
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)

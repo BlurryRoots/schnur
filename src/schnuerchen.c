@@ -1,47 +1,45 @@
-/*
-schnuerchen License 1.0
-
-Copyright (c) 2013 - ∞ Sven Freiberg
-
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without modification,
-are permitted provided that the following conditions are met:
-
-1. Redistributions of source code must retain the above copyright notice,
-   this list of conditions and the following disclaimer.
-
-2. Redistributions in binary form must reproduce the above copyright notice,
-   this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution.
-
-3. This software may not be used in products designed to harm,
-   injure or oppress living creatures.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
-ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
-WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR
-ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
-(INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON
-ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-*/
-
+// Copyright (c) 2013 - ∞ Sven Freiberg. All rights reserved.
+// See license.md for details.
 
 #include <stdlib.h>
 
 #include <schnuerchen.h>
 
-schnur_t*
-schnur_new (void) {
-	schnur_t* s;
+/**
+	@brief: Represents a string of characters.
+*/
+struct schnur {
+	/**
+		@brief: Character array containing all data used by this string object.
+	*/
+	wchar_t* data;
 
-	s = malloc (sizeof (schnur_t));
+	/**
+		@brief: Number of characters used. In other words the position of the
+				  null terminator (\0).
+	*/
+	size_t length;
+
+	/**
+		@brief: Maximum number of characters this string can hold.
+	*/
+	size_t capacity;
+};
+/**
+ * @brief Convenience typedef for struct schnur.
+ * @see struct schnur
+ */
+typedef
+	struct schnur
+	schnur_t;
+
+struct schnur*
+schnur_new (void) {
+	struct schnur* s;
+
+	s = malloc (sizeof (struct schnur));
 	if (NULL == s) {
-		return 0;
+		return NULL;
 	}
 
 	s->data = calloc (SCHNUR_BLOCK_SIZE, sizeof (wchar_t));
@@ -57,8 +55,21 @@ schnur_new (void) {
 	return s;
 }
 
+struct schnur*
+schnur_new_s (const wchar_t* str) {
+	struct schnur* s = schnur_new ();
+	if (NULL == s) return NULL;
+
+	if (0 == schnur_copy_cstr (s, str)) {
+		schnur_free (s);
+		return NULL;
+	}
+
+	return s;
+}
+
 void
-schnur_free (schnur_t* self) {
+schnur_free (struct schnur* self) {
 	if (NULL == self) {
 		return;
 	}
@@ -70,49 +81,122 @@ schnur_free (schnur_t* self) {
 	free (self);
 }
 
+wchar_t
+schnur_get (const struct schnur* self, size_t i) {
+	if (NULL == self) return SCHNUR_NULL;
+	if (i >= self->length) return SCHNUR_NULL;
+
+	return self->data[i];
+}
+
+int
+schnur_set (struct schnur* self, size_t i, wchar_t c) {
+	if (NULL == self) return 0;
+	if (i >= self->length) return 0;
+
+	self->data[i] = c;
+
+	return 1;
+}
+
+void*
+schnur_data(const struct schnur* self) {
+	if (NULL == self) {
+		return NULL;
+	}
+
+	return self->data;
+}
+
+size_t
+schnur_data_size(const struct schnur* self) {
+	if (NULL == self) {
+		return 0;
+	}
+
+	if (0 < self->capacity) {
+		return sizeof (self->data[0]) * self->capacity;
+	}
+
+	return 0;
+}
+
+size_t
+schnur_length(const struct schnur* self) {
+	if (NULL == self) {
+		return 0;
+	}
+
+	return self->length;
+}
+
+size_t
+schnur_capacity(const struct schnur* self) {
+	if (NULL == self) {
+		return 0;
+	}
+
+	return self->capacity;
+}
+
+int
+schnur_terminate (struct schnur* self, size_t i) {
+	if (NULL == self) {
+		return 0;
+	}
+
+	if (self->capacity <= i) {
+		return 0;
+	}
+
+	self->length = i + 1;
+	self->data[i] = L'\0';
+
+	return 1;
+}
+
 /*
 	Raw implementation for string filling.
 */
-void
-__schnur_fill_n (schnur_t* self, wchar_t c, size_t n) {
+int
+__schnur_fill_n (struct schnur* self, wchar_t c, size_t n) {
 	size_t i;
 
 	if (0 == n) {
-		return;
+		return 0;
 	}
 
 	for (i = 0; i < n; ++i) {
 		self->data[i] = c;
 	}
-	self->data[n - 1] = '\0';
-}
+	self->data[n - 1] = L'\0';
 
-int
-schnur_fill (schnur_t* self, wchar_t c) {
-	if (NULL == self) {
-		return 0;
-	}
-
-	__schnur_fill_n (self, c, self->capacity);
+	self->length = n;
 
 	return 1;
 }
 
 int
-schnur_fill_n (schnur_t* self, wchar_t c, size_t n)
-{
+schnur_fill (struct schnur* self, wchar_t c) {
+	if (NULL == self) {
+		return 0;
+	}
+
+	return __schnur_fill_n (self, c, self->capacity);
+}
+
+int
+schnur_fill_n (struct schnur* self, wchar_t c, size_t n) {
 	if (NULL == self
 	 || n > self->capacity) {
 		return 0;
 	}
 
-	__schnur_fill_n (self, c, n);
-
-	return 1;
+	return __schnur_fill_n (self, c, n);
 }
 
 int
-schnur_expand (schnur_t* self) {
+schnur_expand (struct schnur* self) {
 	wchar_t* buffer;
 
 	if (NULL == self) {
@@ -139,7 +223,7 @@ schnur_expand (schnur_t* self) {
 }
 
 int
-schnur_compact (schnur_t* self) {
+schnur_compact (struct schnur* self) {
 	size_t diff, memoff;
 	wchar_t* buffer;
 
@@ -151,27 +235,28 @@ schnur_compact (schnur_t* self) {
 
 	memoff = diff % SCHNUR_BLOCK_SIZE;
 	if (memoff > 0) {
-		buffer = calloc (
-			self->length + 1 + memoff, // len + \0 + offset
-			sizeof (wchar_t)
+		buffer = realloc (self->data,
+			sizeof (wchar_t) * (self->length + 1 + memoff) // len + \0 + offset
 		);
 		if (NULL == buffer) {
 			return 0;
 		}
 
-		wcsncpy (buffer, self->data, self->length + 1 + memoff);
+		//wcsncpy (buffer, self->data, self->length + 1 + memoff);
 
-		free (self->data);
+		//free (self->data);
 		self->data = buffer;
 
 		self->capacity = self->length + 1 + memoff;
+
+		return 1;
 	}
 
-	return 1;
+	return 0;
 }
 
 int
-schnur_copy (schnur_t* self, const schnur_t* other) {
+schnur_copy (struct schnur* self, const struct schnur* other) {
 	if (NULL == self || NULL == other) {
 		return 0;
 	}
@@ -190,7 +275,7 @@ schnur_copy (schnur_t* self, const schnur_t* other) {
 }
 
 int
-schnur_copy_cstr (schnur_t* self, const wchar_t* other) {
+schnur_copy_cstr (struct schnur* self, const wchar_t* other) {
 	size_t ol;
 
 	if (NULL == self || NULL == other) {
@@ -213,7 +298,7 @@ schnur_copy_cstr (schnur_t* self, const wchar_t* other) {
 }
 
 int
-schnur_append (schnur_t* self, wchar_t c) {
+schnur_append (struct schnur* self, wchar_t c) {
 	if (NULL == self) {
 		return 0;
 	}
@@ -231,7 +316,7 @@ schnur_append (schnur_t* self, wchar_t c) {
 }
 
 int
-schnur_append_cstr (schnur_t* self, const wchar_t* other) {
+schnur_append_cstr (struct schnur* self, const wchar_t* other) {
 	size_t len, i;
 
 	if (NULL == self
@@ -257,7 +342,7 @@ schnur_append_cstr (schnur_t* self, const wchar_t* other) {
 }
 
 int
-schnur_append_string (schnur_t* self, const schnur_t* other) {
+schnur_append_string (struct schnur* self, const struct schnur* other) {
 	size_t i;
 
 	if (NULL == self
@@ -277,7 +362,7 @@ schnur_append_string (schnur_t* self, const schnur_t* other) {
 }
 
 int
-schnur_equal_cstr (const schnur_t* self, const wchar_t* other) {
+schnur_equal_cstr (const struct schnur* self, const wchar_t* other) {
 	size_t ol;
 
 	if (NULL == self
@@ -292,7 +377,7 @@ schnur_equal_cstr (const schnur_t* self, const wchar_t* other) {
 }
 
 int
-schnur_equal (const schnur_t* self, const schnur_t* other) {
+schnur_equal (const struct schnur* self, const struct schnur* other) {
 	if (NULL == self
 	 || NULL == other) {
 		return 0;
@@ -303,7 +388,7 @@ schnur_equal (const schnur_t* self, const schnur_t* other) {
 }
 
 int
-schnur_reverse (schnur_t* self) {
+schnur_reverse (struct schnur* self) {
 	wchar_t buffer;
 	int mid, n, i;
 
