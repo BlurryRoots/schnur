@@ -34,7 +34,7 @@ THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <catch.hpp>
 
 extern "C" {
-	#include "../src/string-library.h"
+	#include <string-library.h>
 
 	#include <stdlib.h>
 	#include <stdio.h>
@@ -140,6 +140,8 @@ TEST_CASE ("string manipulation", "[string]") {
 		for (int i = 0; i < Count; ++i) {
 			REQUIRE (s->data[i] == t[i % 10]);
 		}
+
+		REQUIRE (Count == s->length);
 	}
 
 	SECTION ("string_append_cstr") {
