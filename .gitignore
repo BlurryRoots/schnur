@@ -2,3 +2,6 @@ bin/
 staging/
 obj/
 error.log
+docs/html
+docs/latex
+docs/*.log
