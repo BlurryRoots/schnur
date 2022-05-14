@@ -49,6 +49,8 @@ else()
     add_compile_options(-Wunused-result)
 endif()
 
+add_definitions(-DSCHNUR_WITH_ASSERT=1)
+
 # Collect source and header files.
 file(GLOB_RECURSE SRC
     ${PROJECT_SOURCE_DIR}/src/*.c
@@ -61,6 +63,7 @@ set_property(TARGET schnuerchen PROPERTY C_STANDARD 11)
 
 #.
 add_executable(schnuerchen-test EXCLUDE_FROM_ALL
+    ${PROJECT_SOURCE_DIR}/test/catch-pch.cpp
     ${PROJECT_SOURCE_DIR}/test/main.cpp
 )
 target_include_directories(schnuerchen PUBLIC

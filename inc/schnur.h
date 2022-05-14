@@ -52,6 +52,16 @@ struct schnur*
 schnur_new_s (const wchar_t* s);
 
 /**
+ * @brief      Creates a new schnur_t instance from narrow utf-8 string.
+ * 
+ * @param      s  The string to use as inital value.
+ *
+ * @return     Pointer to new schnur_t instance.
+ */
+struct schnur*
+schnur_new_su (const char* s);
+
+/**
  * @brief      Frees given schnur_t object.
  *
  * @param      self  A schnur pointer.
@@ -69,6 +79,16 @@ schnur_free (struct schnur* self);
  */
 void*
 schnur_data (const struct schnur* self);
+
+/**
+ * @brief      Allocates and fills a multi-byte string of given schnur's contents.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     A multi-byte string. Needs to be free'd;
+ */
+char*
+schnur_export (const struct schnur* self);
 
 /**
  * @brief      Retrieves the raw storage pointer of this schnur.
@@ -278,5 +298,8 @@ schnur_equal (const struct schnur* self, const struct schnur* other);
  */
 int
 schnur_reverse (struct schnur* self);
+
+int
+schnur_supports_multibytes ();
 
 #endif

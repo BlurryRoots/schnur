@@ -1,9 +1,54 @@
 // Copyright (c) 2013 - ∞ Sven Freiberg. All rights reserved.
 // See license.md for details.
 
-#include <stdlib.h>
 
 #include <schnur.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <assert.h>
+
+#define WCS_ERROR ((size_t)-1)
+
+#if defined(SCHNUR_WITH_ASSERT)
+#define WCS_TEST_CHAR L'Ϡ'
+#define WCS_TEST_STRING_TO_MB_SIZE 2 * sizeof (wchar_t)
+static int g_need_check_multi_byte = 1;
+static int g_supports_multibyte = 0;
+
+static void multi_byte_ok () {
+	g_need_check_multi_byte = 0;
+}
+
+static int should_check_multi_byte () {
+	return g_need_check_multi_byte;
+}
+
+static int check_multi_byte () {
+	static char mbstr[WCS_TEST_STRING_TO_MB_SIZE];
+	size_t mbn = wctomb (mbstr, WCS_TEST_CHAR);
+	g_supports_multibyte = WCS_ERROR != mbn;
+#if defined(SCHNUR_VERBOSE_LOGGING)
+	if (g_supports_multibyte) {
+		fprintf (stderr, "'%s'\n", mbstr);
+	}
+	else {
+		fprintf (stderr, "Sadly no multibyte :/\n");
+	}
+#endif
+	return g_supports_multibyte;
+}
+
+int
+schnur_supports_multibytes () {
+	return check_multi_byte ();
+}
+#else
+int
+schnur_supports_multibytes () {
+	return -1;
+}
+#endif
 
 /**
 	@brief: Represents a string of characters.
@@ -37,6 +82,12 @@ struct schnur*
 schnur_new (void) {
 	struct schnur* s;
 
+#if defined(SCHNUR_WITH_ASSERT)
+	if (0 == check_multi_byte ()) {
+		return NULL;
+	}
+#endif
+
 	s = malloc (sizeof (struct schnur));
 	if (NULL == s) {
 		return NULL;
@@ -63,6 +114,48 @@ schnur_new_s (const wchar_t* str) {
 	if (0 == schnur_copy_cstr (s, str)) {
 		schnur_free (s);
 		return NULL;
+	}
+
+	return s;
+}
+
+struct schnur*
+schnur_new_su (const char* str) {
+	if (NULL == str) return NULL;
+
+	struct schnur* s = schnur_new ();
+	if (NULL == s) return NULL;
+
+	size_t total_source_length = strlen (str);
+	size_t block_count = total_source_length / 32;
+	size_t rest_count = total_source_length % 32;
+	size_t count_wcs = 0;
+
+	char source_block_buffer[32];
+	wchar_t block_buffer[32];
+
+	for (size_t block_index = 0; block_index < block_count; ++block_index) {
+		memcpy (source_block_buffer, str+(block_index*32), 32);
+		count_wcs = mbstowcs (block_buffer, source_block_buffer, 32);
+		assert (32 == count_wcs && "Not the block we were looking for :/");
+		wprintf (L"Encoded block of 32 wide characters: '%ls'\n", block_buffer);
+		if (schnur_append_cstr (s, block_buffer)) {
+			schnur_free (s);
+			return NULL;
+		}
+	}
+
+	if (0 < rest_count) {
+		memset (source_block_buffer, '\0', 32);
+		memcpy (source_block_buffer, str+(block_count*32), rest_count);
+		memset (block_buffer, L'\0', 32);
+		count_wcs = mbstowcs (block_buffer, source_block_buffer, 32);
+		//assert (rest_count == count_wcs && "That gave it the rest :/");
+		wprintf (L"Encoded remaining %zu wide characters: '%ls'\n", count_wcs, block_buffer);
+		if (0 == schnur_append_cstr (s, block_buffer)) {
+			schnur_free (s);
+			return NULL;
+		}
 	}
 
 	return s;
@@ -106,6 +199,29 @@ schnur_data(const struct schnur* self) {
 	}
 
 	return self->data;
+}
+
+char*
+schnur_export (const struct schnur* self) {
+	if (NULL == self) {
+		return NULL;
+	}
+
+	size_t allocation_count = self->length + 1;
+	size_t wcs_size = sizeof (wchar_t);
+	size_t utf8_size = sizeof (char) * 4;
+	// make room for 16 and 32 bit wchar's
+	allocation_count *= wcs_size / 2;
+
+	printf ("allocation_count: %zu, utf8_size: %zu wcs_size: %zu, self->length: %zu\n",
+		allocation_count, utf8_size, wcs_size, self->length);
+
+	char* export_string = calloc(utf8_size, allocation_count);
+
+	size_t mbsc = wcstombs (export_string, self->data, allocation_count);
+	if (WCS_ERROR == mbsc) return NULL;
+
+	return export_string;
 }
 
 size_t
@@ -337,6 +453,7 @@ schnur_append_cstr (struct schnur* self, const wchar_t* other) {
 		self->data[self->length + i] = other[i];
 	}
 	self->data[self->length + len] = SCHNUR_C ('\0');
+	self->length += len;
 
 	return 1;
 }
