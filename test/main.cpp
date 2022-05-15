@@ -18,8 +18,6 @@ extern "C" {
 	#include <schnur.h>
 }
 
-#include <iostream>
-
 #define WCS_ERROR ((size_t)-1)
 #define SHOW_DEBUG 0
 
@@ -32,11 +30,11 @@ TEST_CASE ("creation/new", "[string]") {
 	#endif
 
 	SECTION ("data sizes") {
-		const wchar_t* base = L"живот";
-		const size_t base_len = wcslen (base);
-		REQUIRE (5 == base_len);
+		constexpr wchar_t* base = L"живот";
+		constexpr size_t base_len = 5;
+		REQUIRE (base_len == wcslen (base));
 		
-		const size_t bl = (base_len+1) * sizeof (wchar_t);
+		constexpr size_t bl = (base_len+1) * sizeof (wchar_t);
 		char mbstr[bl];
 		size_t mbn = wcstombs (mbstr, base, bl);
 		printf ("Converted multi-byte string(%zu, max: %zu): %s\n", mbn, bl, mbstr);
@@ -46,7 +44,7 @@ TEST_CASE ("creation/new", "[string]") {
 	SECTION ("schnur_new") {
 		schnur_t* s = schnur_new ();
 
-		REQUIRE (NULL != schnur_data (s));
+		REQUIRE (NULL != schnur_wide (s));
 		REQUIRE (SCHNUR_BLOCK_SIZE == schnur_capacity (s));
 		REQUIRE (0 == schnur_length (s));
 
@@ -75,7 +73,7 @@ TEST_CASE ("creation/new", "[string]") {
 		REQUIRE (SCHNUR_BLOCK_SIZE == schnur_capacity (new_s));
 		size_t new_s_l = schnur_length (new_s);
 		REQUIRE (5 == new_s_l);
-		wchar_t* new_s_base = (wchar_t*)schnur_data (new_s);
+		wchar_t* new_s_base = (wchar_t*)schnur_wide (new_s);
 		REQUIRE (0 == wcscmp (new_s_base, base));
 
 		wprintf (L"??(%zu): '%ls'\n", new_s_l, new_s_base);
@@ -87,25 +85,35 @@ TEST_CASE ("creation/new", "[string]") {
 		free (kaknase);
 	}
 
-	SECTION ("energy") {22
+	SECTION ("energy") {
 		schnur_t* wow = schnur_new_s (L"๐๓๓๗.๛");
-		wprintf (L"What?!: %s\n", schnur_data (wow));
-		char* exp = schnur_export (wow);
-		printf ("exp(%zu): '%s'\n", strlen (exp), exp);
-		free (exp);
+		wprintf (L"What?!: %s\n", schnur_wide (wow));
+		
+		{
+			char* exp = schnur_narrow (wow);
+			printf ("exp(%zu): '%s'\n", strlen (exp), exp);
+			free (exp);
+		}
+
 		schnur_set (wow, 0, L'ყ');
 		schnur_set (wow, 1, L'ა');
 		schnur_set (wow, 2, L'ვ');
 		schnur_set (wow, 3, L'ა');
 		schnur_set (wow, 4, L'\0');
-		exp = schnur_export (wow);
-		printf ("exp(%zu): '%s'\n", strlen (exp), exp);
-		schnur_t* pop = schnur_new_su ("\xE1\x83\xA7\xE1\x83\x90\xE1\x83\x95\xE1\x83\x90");
-		char* pop_exp = schnur_export (pop);
-		REQUIRE (0 == strcmp (exp, pop_exp));
-		free (pop_exp);
-		free (exp);
-		schnur_free (pop);
+		schnur_set (wow, 5, L'\0');
+
+		SCHNUR_SCOPED (pop, schnur_new_su (
+			"\xE1\x83\xA7" "\xE1\x83\x90"
+			"\xE1\x83\x95" "\xE1\x83\x90"
+		)) {
+			SCHNUR_NARROW_SCOPED(pop, pop_ex) {
+				SCHNUR_NARROW_SCOPED(wow, wow_ex) {
+					printf("exp(%zu): '%s'\n", strlen(pop_ex), pop_ex);
+					REQUIRE(0 == strcmp(wow_ex, pop_ex));
+				}
+			}
+		}
+
 		schnur_free (wow);
 	}
 
@@ -121,7 +129,7 @@ TEST_CASE ("wide/narrow encoding", "[string]") {
 		schnex = schnur_new_s (L"живи и воли, живот је кратак");
 		REQUIRE (NULL != schnex);
 		size_t ls = schnur_length (schnex);
-		char* export_string = schnur_export (schnex);
+		char* export_string = schnur_narrow (schnex);
 		printf ("Exported wide string contents to: '%s'\n", export_string);
 		size_t le = strlen (export_string);
 		REQUIRE (50 == le);
@@ -141,7 +149,7 @@ TEST_CASE ("appending", "[string]") {
 
 		REQUIRE (1 == schnur_append (s, b[0]));
 
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), b, 1));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), b, 1));
 
 		schnur_free (s);
 	}
@@ -160,7 +168,7 @@ TEST_CASE ("appending", "[string]") {
 		}
 
 		for (size_t i = 0; i < Count; ++i) {
-			REQUIRE (((wchar_t*)schnur_data (s))[i] == t[i % 10]);
+			REQUIRE (((wchar_t*)schnur_wide (s))[i] == t[i % 10]);
 		}
 
 		REQUIRE (Count == schnur_length (s));
@@ -182,7 +190,7 @@ TEST_CASE ("appending", "[string]") {
 
 		REQUIRE (1 == schnur_append_cstr (s, b));
 
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), both, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), both, l));
 
 		schnur_free (s);
 	}
@@ -207,7 +215,7 @@ TEST_CASE ("appending", "[string]") {
 
 		REQUIRE (1 == schnur_append_string (s, s2));
 
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), both, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), both, l));
 
 		schnur_free (s2);
 		schnur_free (s);
@@ -228,7 +236,7 @@ TEST_CASE ("copy", "[string]") {
 		REQUIRE (wcslen (w) == l);
 		schnur_copy_cstr (s, w);
 
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), w, l));
 		schnur_free (s);
 	}
 
@@ -244,13 +252,13 @@ TEST_CASE ("copy", "[string]") {
 		REQUIRE (wcslen (w) == l);
 		schnur_copy_cstr (s, w);
 
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), w, l));
 
 		o = schnur_new ();
 		REQUIRE (NULL != o);
 
 		schnur_copy (o, s);
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), (wchar_t*)schnur_data (o), l));
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_wide (s), (wchar_t*)schnur_wide (o), l));
 
 		schnur_free (o);
 		schnur_free (s);
@@ -267,7 +275,7 @@ TEST_CASE ("expand/compact", "[string]") {
 
 		schnur_expand (s);
 
-		REQUIRE (NULL != schnur_data (s));
+		REQUIRE (NULL != schnur_wide (s));
 		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
 
 		schnur_free (s);
@@ -281,7 +289,7 @@ TEST_CASE ("expand/compact", "[string]") {
 		schnur_expand (s);
 		schnur_expand (s); // 3 * SCHNUR_BLOCK_SIZE
 
-		REQUIRE (NULL != schnur_data (s));
+		REQUIRE (NULL != schnur_wide (s));
 		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
 
 		REQUIRE (1 == schnur_fill (s, SCHNUR_C ('X')));
@@ -371,17 +379,17 @@ TEST_CASE ("string manipulation", "[string]") {
 		schnur_copy_cstr (s, w);
 
 		#if 1 == SHOW_DEBUG
-		wprintf (L"d: %ls\n", schnur_data (s));
+		wprintf (L"d: %ls\n", schnur_wide (s));
 		#endif
 
 		REQUIRE (1 == schnur_reverse (s));
 
 		#if 1 == SHOW_DEBUG
-		wprintf (SCHNUR ("d: %ls\n"), schnur_data (s));
+		wprintf (SCHNUR ("d: %ls\n"), schnur_wide (s));
 		#endif
 
 		for (size_t i = 0; i < l; ++i) {
-			REQUIRE (((wchar_t*)schnur_data (s))[i] == w[l - i - 1]);
+			REQUIRE (((wchar_t*)schnur_wide (s))[i] == w[l - i - 1]);
 		}
 
 		schnur_free (s);
