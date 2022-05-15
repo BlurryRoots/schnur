@@ -18,14 +18,10 @@ set(VERSION_PATCH ${BUILD_PATCH})
 set(VERSION_FORMAT "v%d.%d.%d")
 
 # Specify version for this project.
-project (schnuerchen VERSION ${BUILD_VERSION})
+project (schnur VERSION ${BUILD_VERSION})
 
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE PATH "" FORCE)
-endif()
-
-if (USE_GEDANKEN)
-ADD_DEFINITIONS(-DUSE_GEDANKEN=1)
 endif()
 
 string(
@@ -58,27 +54,32 @@ add_definitions(-DSCHNUR_WITH_ASSERT=1)
 file(GLOB_RECURSE SRC
     ${PROJECT_SOURCE_DIR}/src/*.c
 )
-add_library(schnuerchen ${SRC})
-target_include_directories(schnuerchen PUBLIC
+add_library(schnur ${SRC})
+target_include_directories(schnur PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/inc/>
 )
-set_property(TARGET schnuerchen PROPERTY C_STANDARD 11)
+set_property(TARGET schnur PROPERTY C_STANDARD 11)
 
-#.
-add_executable(schnuerchen-test EXCLUDE_FROM_ALL
+# Dedicated test build target. Will not be built by default.
+add_executable(schnur-test EXCLUDE_FROM_ALL
     ${PROJECT_SOURCE_DIR}/test/catch-pch.cpp
     ${PROJECT_SOURCE_DIR}/test/main.cpp
 )
-target_include_directories(schnuerchen PUBLIC
+target_include_directories(schnur-test PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Catch/include>
 )
-set_property(TARGET schnuerchen-test PROPERTY CXX_STANDARD 11)
-add_dependencies(schnuerchen-test schnuerchen)
-target_link_libraries(schnuerchen-test schnuerchen)
+set_property(TARGET schnur-test PROPERTY CXX_STANDARD 11)
+add_dependencies(schnur-test schnur)
+target_link_libraries(schnur-test schnur)
+if(WIN32)
+    set_property(
+        DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        PROPERTY VS_STARTUP_PROJECT schnur-test)
+endif()
 
 # Build documentation via doxygen.
-add_custom_target (schnuerchen-docs
+add_custom_target (schnur-docs
     COMMAND doxygen ${PROJECT_SOURCE_DIR}/docs/Doxyfile
-        DEPENDS schnuerchen
+        DEPENDS schnur
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
