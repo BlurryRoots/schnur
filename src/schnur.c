@@ -4,6 +4,7 @@
 
 #include <schnur.h>
 
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -192,8 +193,8 @@ schnur_set (struct schnur* self, size_t i, wchar_t c) {
 	return 1;
 }
 
-void*
-schnur_data(const struct schnur* self) {
+wchar_t*
+schnur_wide(const struct schnur* self) {
 	if (NULL == self) {
 		return NULL;
 	}
@@ -202,7 +203,7 @@ schnur_data(const struct schnur* self) {
 }
 
 char*
-schnur_export (const struct schnur* self) {
+schnur_narrow (const struct schnur* self) {
 	if (NULL == self) {
 		return NULL;
 	}
@@ -217,11 +218,11 @@ schnur_export (const struct schnur* self) {
 		allocation_count, utf8_size, wcs_size, self->length);
 
 	char* export_string = calloc(utf8_size, allocation_count);
-
-	size_t mbsc = wcstombs (export_string, self->data, allocation_count);
+	size_t total_bytes = allocation_count * utf8_size;
+	size_t mbsc = wcstombs (export_string, self->data, total_bytes);
 	if (WCS_ERROR == mbsc) return NULL;
 
-	printf ("compating export string from %zu to %zu.\n", allocation_count, mbsc);
+	printf ("compating export string from %zu to %zu.\n", total_bytes, mbsc);
 	char* compact_export = realloc (export_string, mbsc + 1);
 	if (NULL == compact_export) {
 		free (export_string);
@@ -514,7 +515,7 @@ schnur_equal (const struct schnur* self, const struct schnur* other) {
 int
 schnur_reverse (struct schnur* self) {
 	wchar_t buffer;
-	int mid, n, i;
+	size_t mid, n, i;
 
 	if (NULL == self) {
 		return 0;
@@ -537,4 +538,9 @@ schnur_reverse (struct schnur* self) {
 	}
 
 	return 1;
+}
+
+void
+schnur_scoped_default_error_handler (const char* sname) {
+	fprintf (stderr, "Could not initialize '%s'.", sname);
 }

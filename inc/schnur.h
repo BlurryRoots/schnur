@@ -77,8 +77,8 @@ schnur_free (struct schnur* self);
  *
  * @return     The raw pointer;
  */
-void*
-schnur_data (const struct schnur* self);
+wchar_t*
+schnur_wide (const struct schnur* self);
 
 /**
  * @brief      Allocates and fills a multi-byte string of given schnur's contents.
@@ -88,7 +88,7 @@ schnur_data (const struct schnur* self);
  * @return     A multi-byte string. Needs to be free'd;
  */
 char*
-schnur_export (const struct schnur* self);
+schnur_narrow (const struct schnur* self);
 
 /**
  * @brief      Retrieves the raw storage pointer of this schnur.
@@ -301,5 +301,31 @@ schnur_reverse (struct schnur* self);
 
 int
 schnur_supports_multibytes ();
+
+void
+schnur_scoped_default_error_handler (const char* sname);
+
+#define _SCHNUR_UNIQUE_VARIABLE_NAME(name) name
+#define _SCHNUR_SCOPE_VARIABLE(name) _SCHNUR_UNIQUE_VARIABLE_NAME(_##name)
+#define SCHNUR_SCOPED_HANDLE(sname, creation, error_handler) \
+for ( \
+    schnur_t *sname = creation; \
+    NULL != sname; \
+    (NULL != sname \
+        ? ((schnur_free (sname), 1) && (sname = NULL)) \
+        : (error_handler (#sname))) \
+)
+#define SCHNUR_SCOPED(sname, creation) \
+    SCHNUR_SCOPED_HANDLE(sname, creation, schnur_scoped_default_error_handler)
+#define SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, error_handler) \
+for ( \
+    char *strname = schnur_narrow (sname); \
+    NULL != strname; \
+    (NULL != strname \
+        ? ((free (strname), 1) && (strname = NULL)) \
+        : (error_handler (#strname))) \
+)
+#define SCHNUR_NARROW_SCOPED(sname, strname) \
+    SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, schnur_scoped_default_error_handler)
 
 #endif
