@@ -44,6 +44,9 @@ set (CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
 if (MSVC)
     # warning level 4 and all warnings as errors
     #add_compile_options(/W4 /WX)
+    #add_definitions(-Dwcstombs=wcstombs_s)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS=1)
+    add_definitions(-Dstrdup=_strdup)
 else()
     # lots of warnings and all warnings as errors
     add_compile_options(-Wunused-result)
@@ -69,7 +72,7 @@ add_executable(schnuerchen-test EXCLUDE_FROM_ALL
 target_include_directories(schnuerchen PUBLIC
   $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/Catch/include>
 )
-set_property(TARGET schnuerchen-test PROPERTY CXX_STANDARD 17)
+set_property(TARGET schnuerchen-test PROPERTY CXX_STANDARD 11)
 add_dependencies(schnuerchen-test schnuerchen)
 target_link_libraries(schnuerchen-test schnuerchen)
 
