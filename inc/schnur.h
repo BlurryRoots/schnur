@@ -16,18 +16,30 @@
  */
 #define SCHNUR_BLOCK_SIZE 32
 
+/// Wraps a narrow character or string.
 #define SCHNUR_N(t) t
+/// Wraps a wide character or string.
 #define SCHNUR_W(t) L##t
 
+/// The null terminator for a narrow character type.
 #define SCHNUR_NC_NULL SCHNUR_N ('\0')
+/// The null terminator for a wide character type.
 #define SCHNUR_WC_NULL SCHNUR_W ('\0')
 #if defined(NULL)
+/// A null pointer for use with pointers to schnur_t.
 #define SCHNUR_NULL NULL
 #else
+/// A null pointer for use with pointers to schnur_t.
 #define SCHNUR_NULL 0
 #endif
 
+/**
+    @brief: Represents a narrow character.
+*/
 typedef char schnur_narrow_t;
+/**
+    @brief: Represents a wide character.
+*/
 typedef wchar_t schnur_wide_t;
 
 /**
@@ -321,15 +333,32 @@ schnur_equal (const struct schnur* self, const struct schnur* other);
 int
 schnur_reverse (struct schnur* self);
 
+/**
+ * @brief      Helper function, to determine if the current build environment
+ * is supporting wide <-> narrow (aka. multi-byte) character conversion.
+ * 
+ * This is sensitive to the definition of symbol SCHNUR_WITH_ASSERT. If not
+ * defined, the function will always return -1. If defined, it will run a check
+ * to see if the current build environment supports converting wide character
+ * strings to narrow / multi-byte strings.
+ *
+ * @return     1 if supporting multi-byte, 0 otherwise. -1 if SCHNUR_WITH_ASSERT is not defined.
+ */
 int
 schnur_supports_multibytes ();
 
+/**
+ * @brief      Default handler, used in '*_SCOPED' convenice macros. Will print
+ * an error message to stderr containing the variable name which did not properly
+ * initialize by default.
+ */
 void
 schnur_scoped_default_error_handler (const schnur_narrow_t* sname);
 
-#define _SCHNUR_UNIQUE_VARIABLE_NAME(name) name
-#define _SCHNUR_SCOPE_VARIABLE(name) _SCHNUR_UNIQUE_VARIABLE_NAME(_##name)
-
+/// Generates the header for a scope / code block, which makes sure, that the
+/// schnur_t* with 'sname', created via 'creation', is properly freed after
+/// the block is exited. If anything goes wrong in the creation, it will invoke
+/// the handler function provided at 'error_handler'.
 #define SCHNUR_SCOPED_HANDLE(sname, creation, error_handler) \
 for ( \
     schnur_t *sname = creation; \
@@ -338,11 +367,19 @@ for ( \
         ? ((schnur_free (sname), 1) && (sname = NULL)) \
         : (error_handler (#sname))) \
 )
+/// Generates a scope / code block by using SCHNUR_SCOPED_HANDLE with the
+/// default error handler function.
 #define SCHNUR_SCOPED(sname, creation) \
     SCHNUR_SCOPED_HANDLE(sname, creation, schnur_scoped_default_error_handler)
+/// Generates a scope / code block by using SCHNUR_SCOPED with the
+//// default schnur creation function (aka. 'schnur_new ()').
 #define SCHNUR_SCOPED_EMPTY(sname) \
     SCHNUR_SCOPED(sname, schnur_new ())
 
+/// Generates the header for a scope / code block, which makes sure, that the
+/// schnur_narrow_t* with 'strname', created from the schnur_t* 'sname',
+/// is properly freed after the block is exited. If anything goes wrong in the
+/// creation, it will invoke the handler function provided at 'error_handler'.
 #define SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, error_handler) \
 for ( \
     schnur_narrow_t *strname = schnur_narrow (sname); \
@@ -351,9 +388,15 @@ for ( \
         ? ((free (strname), 1) && (strname = NULL)) \
         : (error_handler (#strname))) \
 )
+/// Generates header by using SCHNUR_NARROW_SCOPED_HANDLE with the default
+/// error handler function.
 #define SCHNUR_NARROW_SCOPED(sname, strname) \
     SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, schnur_scoped_default_error_handler)
 
+/// Generates the header for a scope / code block, which makes sure, that the
+/// schnur_wide_t* with 'strname', created from the schnur_t* 'sname',
+/// is properly freed after the block is exited. If anything goes wrong in the
+/// creation, it will invoke the handler function provided at 'error_handler'.
 #define SCHNUR_WIDE_SCOPED_HANDLE(sname, strname, error_handler) \
 for ( \
     schnur_wide_t *strname = schnur_wide (sname); \
@@ -362,6 +405,8 @@ for ( \
         ? ((free (strname), 1) && (strname = NULL)) \
         : (error_handler (#strname))) \
 )
+/// Generates header by using SCHNUR_WIDE_SCOPED_HANDLE with the default
+/// error handler function.
 #define SCHNUR_WIDE_SCOPED(sname, strname) \
     SCHNUR_WIDE_SCOPED_HANDLE(sname, strname, schnur_scoped_default_error_handler)
 
