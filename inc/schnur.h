@@ -16,10 +16,19 @@
  */
 #define SCHNUR_BLOCK_SIZE 32
 
-#define SCHNUR(t) L##t
-#define SCHNUR_C(t) SCHNUR (t)
+#define SCHNUR_N(t) t
+#define SCHNUR_W(t) L##t
 
-#define SCHNUR_NULL SCHNUR_C ('\0')
+#define SCHNUR_NC_NULL SCHNUR_N ('\0')
+#define SCHNUR_WC_NULL SCHNUR_W ('\0')
+#if defined(NULL)
+#define SCHNUR_NULL NULL
+#else
+#define SCHNUR_NULL 0
+#endif
+
+typedef char schnur_narrow_t;
+typedef wchar_t schnur_wide_t;
 
 /**
 	@brief: Represents a string of characters.
@@ -49,7 +58,7 @@ schnur_new (void);
  * @return     Pointer to new schnur_t instance.
  */
 struct schnur*
-schnur_new_s (const wchar_t* s);
+schnur_new_s (const schnur_wide_t* s);
 
 /**
  * @brief      Creates a new schnur_t instance from narrow utf-8 string.
@@ -59,7 +68,7 @@ schnur_new_s (const wchar_t* s);
  * @return     Pointer to new schnur_t instance.
  */
 struct schnur*
-schnur_new_su (const char* s);
+schnur_new_su (const schnur_narrow_t* s);
 
 /**
  * @brief      Frees given schnur_t object.
@@ -69,15 +78,38 @@ schnur_new_su (const char* s);
 void
 schnur_free (struct schnur* self);
 
-
 /**
- * @brief      Retrieves the raw storage pointer of this schnur.
+ * @brief      Retrieves the data pointer.
  *
  * @param      self  A schnur pointer.
  *
- * @return     The raw pointer;
+ * @return     The raw data pointer;
  */
-wchar_t*
+void*
+schnur_raw (const struct schnur* self);
+
+/**
+ * @brief      Retrieves the number of bytes for the raw storage of this schnur.
+ * 
+ * This will retrieve the total bytes available for the internal raw data 
+ * storage.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     The size in bytes of this schnur's raw data storage.
+ */
+size_t
+schnur_raw_size (const struct schnur* self);
+
+
+/**
+ * @brief      Retrieves a copy of the contents in wide character encoding.
+ *
+ * @param      self  A schnur pointer.
+ *
+ * @return     Contents as wide string. Needs to be free'd;
+ */
+schnur_wide_t*
 schnur_wide (const struct schnur* self);
 
 /**
@@ -85,24 +117,24 @@ schnur_wide (const struct schnur* self);
  *
  * @param      self  A schnur pointer.
  *
- * @return     A multi-byte string. Needs to be free'd;
+ * @return     Content as multi-byte/narrow string. Needs to be free'd;
  */
-char*
+schnur_narrow_t*
 schnur_narrow (const struct schnur* self);
 
 /**
- * @brief      Retrieves the raw storage pointer of this schnur.
+ * @brief      Retrieves a wide character at given index.
  *
  * @param      self  A schnur pointer.
  * @param[in]  i     Index of character to fetch.
  *
  * @return     Character at index or '\0' if arguments where invalid.
  */
-wchar_t
+schnur_wide_t
 schnur_get (const struct schnur* self, size_t i);
 
 /**
- * @brief      Sets the character at given index.
+ * @brief      Sets a wide character at given index.
  *
  * @param      self  A schnur pointer.
  * @param[in]  c     Character to set.
@@ -111,17 +143,7 @@ schnur_get (const struct schnur* self, size_t i);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_set (struct schnur* self, size_t i, wchar_t c);
-
-/**
- * @brief      Retrieves the number of bytes allocated by this schnur.
- *
- * @param      self  A schnur pointer.
- *
- * @return     The size in bytes of this schnur's data.
- */
-size_t
-schnur_data_size (const struct schnur* self);
+schnur_set (struct schnur* self, size_t i, schnur_wide_t c);
 
 /**
  * @brief      Retrieves the number of currently stored characters.
@@ -168,7 +190,7 @@ schnur_terminate (struct schnur* self, size_t n);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_fill (struct schnur* self, wchar_t c);
+schnur_fill (struct schnur* self, schnur_wide_t c);
 
 /**
  * @brief      Fills n places of string with given character.
@@ -180,7 +202,7 @@ schnur_fill (struct schnur* self, wchar_t c);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_fill_n (struct schnur* self, wchar_t c, size_t n);
+schnur_fill_n (struct schnur* self, schnur_wide_t c, size_t n);
 
 /**
  * @brief      Expands the capacity of string according to SCHNUR_BLOCK_SIZE.
@@ -230,7 +252,7 @@ schnur_copy (struct schnur* self, const struct schnur* other);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_copy_cstr (struct schnur* self, const wchar_t* other);
+schnur_copy_cstr (struct schnur* self, const schnur_wide_t* other);
 
 /**
  * @brief      Appends given character.
@@ -243,7 +265,7 @@ schnur_copy_cstr (struct schnur* self, const wchar_t* other);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_append (struct schnur* self, wchar_t c);
+schnur_append (struct schnur* self, schnur_wide_t c);
 
 /**
  * @brief      Appends given character array to string.
@@ -254,7 +276,7 @@ schnur_append (struct schnur* self, wchar_t c);
  * @return     1 on success, 0 otherwise.
  */
 int
-schnur_append_cstr (struct schnur* self, const wchar_t* other);
+schnur_append_cstr (struct schnur* self, const schnur_wide_t* other);
 
 /**
  * @brief      Appends given string to string.
@@ -276,7 +298,7 @@ schnur_append_string (struct schnur* self, const struct schnur* other);
  * @return     1 on equality, 0 otherwise.
  */
 int
-schnur_equal_cstr (const struct schnur* self, const wchar_t* other);
+schnur_equal_cstr (const struct schnur* self, const schnur_wide_t* other);
 
 /**
  * @brief      Check if used data of self equals used data of other.
@@ -303,10 +325,11 @@ int
 schnur_supports_multibytes ();
 
 void
-schnur_scoped_default_error_handler (const char* sname);
+schnur_scoped_default_error_handler (const schnur_narrow_t* sname);
 
 #define _SCHNUR_UNIQUE_VARIABLE_NAME(name) name
 #define _SCHNUR_SCOPE_VARIABLE(name) _SCHNUR_UNIQUE_VARIABLE_NAME(_##name)
+
 #define SCHNUR_SCOPED_HANDLE(sname, creation, error_handler) \
 for ( \
     schnur_t *sname = creation; \
@@ -317,9 +340,12 @@ for ( \
 )
 #define SCHNUR_SCOPED(sname, creation) \
     SCHNUR_SCOPED_HANDLE(sname, creation, schnur_scoped_default_error_handler)
+#define SCHNUR_SCOPED_EMPTY(sname) \
+    SCHNUR_SCOPED(sname, schnur_new ())
+
 #define SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, error_handler) \
 for ( \
-    char *strname = schnur_narrow (sname); \
+    schnur_narrow_t *strname = schnur_narrow (sname); \
     NULL != strname; \
     (NULL != strname \
         ? ((free (strname), 1) && (strname = NULL)) \
@@ -327,5 +353,16 @@ for ( \
 )
 #define SCHNUR_NARROW_SCOPED(sname, strname) \
     SCHNUR_NARROW_SCOPED_HANDLE(sname, strname, schnur_scoped_default_error_handler)
+
+#define SCHNUR_WIDE_SCOPED_HANDLE(sname, strname, error_handler) \
+for ( \
+    schnur_wide_t *strname = schnur_wide (sname); \
+    NULL != strname; \
+    (NULL != strname \
+        ? ((free (strname), 1) && (strname = NULL)) \
+        : (error_handler (#strname))) \
+)
+#define SCHNUR_WIDE_SCOPED(sname, strname) \
+    SCHNUR_WIDE_SCOPED_HANDLE(sname, strname, schnur_scoped_default_error_handler)
 
 #endif
