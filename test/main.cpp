@@ -23,9 +23,13 @@ extern "C" {
 #define WCS_ERROR ((size_t)-1)
 #define SHOW_DEBUG 0
 
-#if 0
-TEST_CASE ("string creation", "[string]") {
+TEST_CASE ("creation/new", "[string]") {
 	char* locale = strdup (setlocale (LC_ALL, NULL));
+	#if _WIN32
+	setlocale (LC_ALL, ".UTF8");
+	#else
+	ssetlocale (LC_ALL, "en_US.UTF-8");
+	#endif
 
 	SECTION ("data sizes") {
 		const wchar_t* base = L"живот";
@@ -37,25 +41,6 @@ TEST_CASE ("string creation", "[string]") {
 		size_t mbn = wcstombs (mbstr, base, bl);
 		printf ("Converted multi-byte string(%zu, max: %zu): %s\n", mbn, bl, mbstr);
 		REQUIRE (10 == mbn);
-	}
-
-	SECTION ("wide strings and locale") {
-		schnur_t* s = NULL;
-
-		setlocale (LC_ALL, "C");
-		printf ("Set locale to: %s\n", setlocale (LC_ALL, NULL));
-
-		s = schnur_new ();
-		REQUIRE (NULL == s);
-
-	#if _WIN32
-		setlocale (LC_ALL, ".UTF8");
-	#else
-		setlocale (LC_ALL, "en_US.UTF-8");
-	#endif
-		printf ("Change local to: %s\n", setlocale (LC_ALL, NULL));
-		s = schnur_new ();
-		REQUIRE (NULL != s);
 	}
 
 	SECTION ("schnur_new") {
@@ -102,15 +87,34 @@ TEST_CASE ("string creation", "[string]") {
 		free (kaknase);
 	}
 
+	SECTION ("energy") {22
+		schnur_t* wow = schnur_new_s (L"๐๓๓๗.๛");
+		wprintf (L"What?!: %s\n", schnur_data (wow));
+		char* exp = schnur_export (wow);
+		printf ("exp(%zu): '%s'\n", strlen (exp), exp);
+		free (exp);
+		schnur_set (wow, 0, L'ყ');
+		schnur_set (wow, 1, L'ა');
+		schnur_set (wow, 2, L'ვ');
+		schnur_set (wow, 3, L'ა');
+		schnur_set (wow, 4, L'\0');
+		exp = schnur_export (wow);
+		printf ("exp(%zu): '%s'\n", strlen (exp), exp);
+		schnur_t* pop = schnur_new_su ("\xE1\x83\xA7\xE1\x83\x90\xE1\x83\x95\xE1\x83\x90");
+		char* pop_exp = schnur_export (pop);
+		REQUIRE (0 == strcmp (exp, pop_exp));
+		free (pop_exp);
+		free (exp);
+		schnur_free (pop);
+		schnur_free (wow);
+	}
+
 	setlocale (LC_ALL, locale);
 	free (locale);
 }
-#endif
 
-TEST_CASE ("string manipulation", "[string]") {
-	//setlocale (LC_ALL, "en_US.UTF-8");
-	setlocale (LC_ALL, "en_US");
-	//setlocale (LC_ALL, "");
+TEST_CASE ("wide/narrow encoding", "[string]") {
+	setlocale (LC_ALL, "");
 
 	SECTION ("schnur_export") {
 		schnur_t* schnex = NULL;
@@ -123,85 +127,10 @@ TEST_CASE ("string manipulation", "[string]") {
 		REQUIRE (50 == le);
 		free (export_string);
 	}
+}
 
-	SECTION ("schnur_expand") {
-		schnur_t* s = NULL;
-		s = schnur_new ();
-		REQUIRE (NULL != s);
-
-		schnur_expand (s);
-
-		REQUIRE (NULL != schnur_data (s));
-		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
-
-		schnur_free (s);
-	}
-
-	SECTION ("schnur_compact") {
-		schnur_t* s = NULL;
-		s = schnur_new ();
-		REQUIRE (NULL != s);
-
-		schnur_expand (s);
-		schnur_expand (s); // 3 * SCHNUR_BLOCK_SIZE
-
-		REQUIRE (NULL != schnur_data (s));
-		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
-
-		REQUIRE (1 == schnur_fill (s, SCHNUR_C ('X')));
-
-		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_length (s));		
-
-		size_t cutoff_length =
-			(2 * SCHNUR_BLOCK_SIZE - 1)
-			- (SCHNUR_BLOCK_SIZE / 2);
-		// produces a memory offset of half the block size
-		// and freeable memory of 1 * SCHNUR_BLOCK_SIZE
-		REQUIRE (1 == schnur_terminate (s, cutoff_length));
-
-		REQUIRE (1 == schnur_compact (s));
-		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
-		schnur_free (s);
-	}
-
-	SECTION ("schnur_copy_cstr") {
-		schnur_t* s = NULL;
-		s = schnur_new ();
-		REQUIRE (NULL != s);
-
-		const wchar_t* w = SCHNUR ("Hänsel mag Soße!");
-		const size_t l =  wcslen (w);
-
-		REQUIRE (wcslen (w) == l);
-		schnur_copy_cstr (s, w);
-
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
-		schnur_free (s);
-	}
-
-	SECTION ("schnur_copy") {
-		schnur_t* s = NULL;
-		s = schnur_new ();
-		REQUIRE (NULL != s);
-
-		const wchar_t* w = SCHNUR ("ευχαριστημένος");
-		const size_t l = wcslen (w);
-		schnur_t* o;
-
-		REQUIRE (wcslen (w) == l);
-		schnur_copy_cstr (s, w);
-
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
-
-		o = schnur_new ();
-		REQUIRE (NULL != o);
-
-		schnur_copy (o, s);
-		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), (wchar_t*)schnur_data (o), l));
-
-		schnur_free (o);
-		schnur_free (s);
-	}
+TEST_CASE ("appending", "[string]") {
+	setlocale (LC_ALL, "");
 
 	SECTION( "schnur_append" ) {
 		schnur_t* s = NULL;
@@ -222,14 +151,15 @@ TEST_CASE ("string manipulation", "[string]") {
 		s = schnur_new ();
 		REQUIRE (NULL != s);
 
-		const int Count = 23000;
+		const size_t Count = 128000;
 		const wchar_t* t = SCHNUR ("0123456789");
 
-		for (int i = 0; i < Count; ++i) {
+		INFO ("About to append numbers 0-9 for 128.000 times.");
+		for (size_t i = 0; i < Count; ++i) {
 			REQUIRE (1 == schnur_append (s, t[i % 10]));
 		}
 
-		for (int i = 0; i < Count; ++i) {
+		for (size_t i = 0; i < Count; ++i) {
 			REQUIRE (((wchar_t*)schnur_data (s))[i] == t[i % 10]);
 		}
 
@@ -282,6 +212,97 @@ TEST_CASE ("string manipulation", "[string]") {
 		schnur_free (s2);
 		schnur_free (s);
 	}
+}
+
+TEST_CASE ("copy", "[string]") {
+	setlocale (LC_ALL, "");
+
+	SECTION ("schnur_copy_cstr") {
+		schnur_t* s = NULL;
+		s = schnur_new ();
+		REQUIRE (NULL != s);
+
+		const wchar_t* w = SCHNUR ("Hänsel mag Soße!");
+		const size_t l =  wcslen (w);
+
+		REQUIRE (wcslen (w) == l);
+		schnur_copy_cstr (s, w);
+
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
+		schnur_free (s);
+	}
+
+	SECTION ("schnur_copy") {
+		schnur_t* s = NULL;
+		s = schnur_new ();
+		REQUIRE (NULL != s);
+
+		const wchar_t* w = SCHNUR ("ευχαριστημένος");
+		const size_t l = wcslen (w);
+		schnur_t* o;
+
+		REQUIRE (wcslen (w) == l);
+		schnur_copy_cstr (s, w);
+
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), w, l));
+
+		o = schnur_new ();
+		REQUIRE (NULL != o);
+
+		schnur_copy (o, s);
+		REQUIRE (0 == wcsncmp ((wchar_t*)schnur_data (s), (wchar_t*)schnur_data (o), l));
+
+		schnur_free (o);
+		schnur_free (s);
+	}
+}
+
+TEST_CASE ("expand/compact", "[string]") {
+	setlocale (LC_ALL, "");
+
+	SECTION ("schnur_expand") {
+		schnur_t* s = NULL;
+		s = schnur_new ();
+		REQUIRE (NULL != s);
+
+		schnur_expand (s);
+
+		REQUIRE (NULL != schnur_data (s));
+		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
+
+		schnur_free (s);
+	}
+
+	SECTION ("schnur_compact") {
+		schnur_t* s = NULL;
+		s = schnur_new ();
+		REQUIRE (NULL != s);
+
+		schnur_expand (s);
+		schnur_expand (s); // 3 * SCHNUR_BLOCK_SIZE
+
+		REQUIRE (NULL != schnur_data (s));
+		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
+
+		REQUIRE (1 == schnur_fill (s, SCHNUR_C ('X')));
+
+		REQUIRE ((3 * SCHNUR_BLOCK_SIZE) == schnur_length (s));		
+
+		size_t cutoff_length =
+			(2 * SCHNUR_BLOCK_SIZE - 1)
+			- (SCHNUR_BLOCK_SIZE / 2);
+		// produces a memory offset of half the block size
+		// and freeable memory of 1 * SCHNUR_BLOCK_SIZE
+		REQUIRE (1 == schnur_terminate (s, cutoff_length));
+
+		REQUIRE (1 == schnur_compact (s));
+		REQUIRE ((2 * SCHNUR_BLOCK_SIZE) == schnur_capacity (s));
+		schnur_free (s);
+	}
+}
+
+TEST_CASE ("equal", "[string]") {
+	setlocale (LC_ALL, "");
 
 	SECTION ("schnur_equal_cstr") {
 		schnur_t* s = NULL;
@@ -317,6 +338,10 @@ TEST_CASE ("string manipulation", "[string]") {
 		schnur_free (o);
 		schnur_free (s);
 	}
+}
+
+TEST_CASE ("access", "[string]") {
+	setlocale (LC_ALL, "");
 
 	SECTION ("schnur_get") {
 		schnur_t* s = NULL;
@@ -330,6 +355,10 @@ TEST_CASE ("string manipulation", "[string]") {
 		schnur_free (w);
 		schnur_free (s);
 	}
+}
+
+TEST_CASE ("string manipulation", "[string]") {
+	setlocale (LC_ALL, "");
 
 	SECTION ("schnur_reverse") {
 		schnur_t* s = NULL;
@@ -341,15 +370,15 @@ TEST_CASE ("string manipulation", "[string]") {
 
 		schnur_copy_cstr (s, w);
 
-#if 1 == SHOW_DEBUG
+		#if 1 == SHOW_DEBUG
 		wprintf (L"d: %ls\n", schnur_data (s));
-#endif
+		#endif
 
 		REQUIRE (1 == schnur_reverse (s));
 
-#if 1 == SHOW_DEBUG
+		#if 1 == SHOW_DEBUG
 		wprintf (SCHNUR ("d: %ls\n"), schnur_data (s));
-#endif
+		#endif
 
 		for (size_t i = 0; i < l; ++i) {
 			REQUIRE (((wchar_t*)schnur_data (s))[i] == w[l - i - 1]);

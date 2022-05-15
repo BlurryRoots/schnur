@@ -211,7 +211,7 @@ schnur_export (const struct schnur* self) {
 	size_t wcs_size = sizeof (wchar_t);
 	size_t utf8_size = sizeof (char) * 4;
 	// make room for 16 and 32 bit wchar's
-	allocation_count *= wcs_size / 2;
+	allocation_count *= wcs_size;
 
 	printf ("allocation_count: %zu, utf8_size: %zu wcs_size: %zu, self->length: %zu\n",
 		allocation_count, utf8_size, wcs_size, self->length);
@@ -221,7 +221,14 @@ schnur_export (const struct schnur* self) {
 	size_t mbsc = wcstombs (export_string, self->data, allocation_count);
 	if (WCS_ERROR == mbsc) return NULL;
 
-	return export_string;
+	printf ("compating export string from %zu to %zu.\n", allocation_count, mbsc);
+	char* compact_export = realloc (export_string, mbsc + 1);
+	if (NULL == compact_export) {
+		free (export_string);
+		return NULL;
+	}
+
+	return compact_export;
 }
 
 size_t
