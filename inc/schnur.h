@@ -87,7 +87,7 @@ schnur_new_su (const schnur_narrow_t* s);
  *
  * @param      self  A schnur pointer.
  */
-void
+int
 schnur_free (struct schnur* self);
 
 /**
@@ -352,8 +352,14 @@ schnur_supports_multibytes ();
  * an error message to stderr containing the variable name which did not properly
  * initialize by default.
  */
-void
+int
 schnur_scoped_default_error_handler (const schnur_narrow_t* sname);
+
+int
+schnur_narrow_free (schnur_narrow_t* self);
+
+int
+schnur_wide_free (schnur_wide_t* self);
 
 /// Generates the header for a scope / code block, which makes sure, that the
 /// schnur_t* with 'sname', created via 'creation', is properly freed after
@@ -364,7 +370,7 @@ for ( \
     schnur_t *sname = creation; \
     NULL != sname; \
     (NULL != sname \
-        ? ((schnur_free (sname), 1) && (sname = NULL)) \
+        ? (schnur_free (sname) && (sname = NULL)) \
         : (error_handler (#sname))) \
 )
 /// Generates a scope / code block by using SCHNUR_SCOPED_HANDLE with the
@@ -385,7 +391,7 @@ for ( \
     schnur_narrow_t *strname = schnur_narrow (sname); \
     NULL != strname; \
     (NULL != strname \
-        ? ((free (strname), 1) && (strname = NULL)) \
+        ? (schnur_narrow_free (strname) && (strname = NULL)) \
         : (error_handler (#strname))) \
 )
 /// Generates header by using SCHNUR_NARROW_SCOPED_HANDLE with the default
@@ -401,8 +407,8 @@ for ( \
 for ( \
     schnur_wide_t *strname = schnur_wide (sname); \
     NULL != strname; \
-    (NULL != strname \
-        ? ((free (strname), 1) && (strname = NULL)) \
+    ((NULL != strname) \
+        ? (schnur_wide_free (strname) && (strname = NULL)) \
         : (error_handler (#strname))) \
 )
 /// Generates header by using SCHNUR_WIDE_SCOPED_HANDLE with the default

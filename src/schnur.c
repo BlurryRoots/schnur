@@ -56,11 +56,6 @@ schnur_supports_multibytes () {
 */
 struct schnur {
 	/**
-		@brief: Character array containing all data used by this string object.
-	*/
-	schnur_wide_t* data;
-
-	/**
 		@brief: Number of characters used. In other words the position of the
 				  null terminator (\0).
 	*/
@@ -70,6 +65,11 @@ struct schnur {
 		@brief: Maximum number of characters this string can hold.
 	*/
 	size_t capacity;
+
+	/**
+		@brief: Character array containing all data used by this string object.
+	*/
+	schnur_wide_t* data;
 };
 /**
  * @brief Convenience typedef for struct schnur.
@@ -162,10 +162,10 @@ schnur_new_su (const schnur_narrow_t* str) {
 	return s;
 }
 
-void
+int
 schnur_free (struct schnur* self) {
 	if (NULL == self) {
-		return;
+		return 0;
 	}
 
 	if (NULL != self->data) {
@@ -173,6 +173,18 @@ schnur_free (struct schnur* self) {
 	}
 
 	free (self);
+
+	return 1;
+}
+
+int
+schnur_narrow_free (schnur_narrow_t* self) {
+    if (NULL != self) { free (self); return 1; } return 0;
+}
+
+int
+schnur_wide_free (schnur_wide_t* self) {
+    if (NULL != self) { free (self); return 1; } return 0;
 }
 
 schnur_wide_t
@@ -564,7 +576,8 @@ schnur_reverse (struct schnur* self) {
 	return 1;
 }
 
-void
+int
 schnur_scoped_default_error_handler (const schnur_narrow_t* sname) {
 	fprintf (stderr, "Could not initialize '%s'.", sname);
+	return 0;
 }

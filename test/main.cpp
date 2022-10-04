@@ -26,7 +26,7 @@ TEST_CASE ("creation/new", "[string]") {
 	#if _WIN32
 	setlocale (LC_ALL, ".UTF8");
 	#else
-	ssetlocale (LC_ALL, "en_US.UTF-8");
+	setlocale (LC_ALL, "en_US.UTF-8");
 	#endif
 
 	SECTION ("data sizes") {
@@ -70,13 +70,13 @@ TEST_CASE ("creation/new", "[string]") {
 		REQUIRE (5 == schnur_length (new_su));
 		schnur_free (new_su);
 
-		const schnur_wide_t* base = L"љубав";
+		const schnur_wide_t* base = L"љубав 🤗";
 		schnur_t* new_s = schnur_new_s (base);
 
 		REQUIRE (NULL != new_s);
 		REQUIRE (SCHNUR_BLOCK_SIZE == schnur_capacity (new_s));
 		size_t new_s_l = schnur_length (new_s);
-		REQUIRE (5 == new_s_l);
+		REQUIRE (7 == new_s_l);
 
 		SCHNUR_WIDE_SCOPED (new_s, new_s_base) {
 			REQUIRE (0 == wcscmp (new_s_base, base));
